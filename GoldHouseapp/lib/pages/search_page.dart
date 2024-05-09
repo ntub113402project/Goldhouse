@@ -279,7 +279,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                         });
                         Navigator.pop(context);
                       },
-                      child: Text('确认'),
+                      child: Text('確認'),
                     ),
                   ),
                 ],
@@ -664,7 +664,7 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                         });
                         Navigator.pop(context);
                       },
-                      child: Text('确认'),
+                      child: Text('確認'),
                     ),
                   ),
                 ],
@@ -686,7 +686,7 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
         child: ListView(
           children: [
             _buildListTile(
-  '捷运',
+  '捷運',
   () async {
     final result = await Navigator.push(
       context,
@@ -694,7 +694,6 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
     );
     if (result != null && result['MRT'] != null && result['station'] != null) {
       setState(() {
-        // 确保数据不为空
         _selectedMRT = result['MRT'];
         _selectedStation = result['station'];
       });
