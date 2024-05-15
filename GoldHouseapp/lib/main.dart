@@ -5,6 +5,7 @@ import 'pages/forgetpw_page.dart';
 import 'pages/home_page.dart';
 import 'pages/search_page.dart';
 import 'pages/personal_page.dart';
+import 'pages/controll_page.dart';
 void main() {
   runApp(
     MaterialApp(  
@@ -17,7 +18,7 @@ void main() {
         '/search':(context) => SearchPage(),
         
       },
-      home: PersonalPage(),
+      home: ControllPage(),
     )
   );
 }
