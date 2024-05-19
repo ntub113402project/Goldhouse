@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class RegisterPage extends StatefulWidget {
   
@@ -86,6 +88,28 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: ('請輸入電子郵件'),
+                    hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
+                    border: InputBorder.none
+                  ),
+                )
+              ),
+            ),
+            const SizedBox(height: 10,),
+            Padding(
+              padding: EdgeInsets.all(10),
+              child: Text('手機號碼',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
+            ),
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(30),
+                color: const Color(0xFFEFEBE9),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.only(left: 10),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: ('請輸入手機號碼'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none
                   ),

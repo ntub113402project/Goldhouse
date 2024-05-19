@@ -64,3 +64,11 @@ final Map<String, bool> furnitureMap = {
     '床頭櫃': false,
     '椅子': true,
   };
+
+    final List<String> cities = ['台北市', '新北市', '基隆市', '宜蘭縣', '桃園市', '新竹市', '新竹縣', '新竹市', '高雄市',];
+
+    final Map<String, List<String>> cityDistricts = {
+    '台北市': ['中正區', '萬華區', '中山區','大同區','士林區'],
+    '新北市': ['板橋區', '中和區', '永和區'],
+    '高雄市': ['三民區', '鼓山區', '苓雅區'],
+  };

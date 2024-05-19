@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'class.dart';
 
 class SearchPage extends StatefulWidget {
   
@@ -179,6 +179,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
       '0－5,000', '5,001－10,000', '10,001－15,000', '15,001－20,000',
       '20,001－30,000', '30,001－40,000', '40,001元以上'
     ];
+
     _showSelectionBottomSheet(
       context: context,
       title: '租金範圍',
@@ -358,6 +359,15 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                   ? _selectedOtherOptions.join(', ')
                   : '不限',
             ),
+            SizedBox(height: 20,),
+            Align(
+              alignment: Alignment.center,
+              child: ElevatedButton(
+                onPressed: (){}, 
+                style: ButtonStyle(backgroundColor: MaterialStatePropertyAll(Color(0xFF613F26)),),
+                child: Text('搜尋',style: TextStyle(color: const Color.fromARGB(255, 246, 246, 246),fontSize: 18),)
+              ),
+            )            
           ],
         ),
       ),
@@ -366,11 +376,15 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
 }
 
 class CityPage extends StatelessWidget {
-  final List<String> cities = ['台北市', '新北市','桃園市','新竹市','苗栗縣', '高雄市',];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('選擇縣市'),centerTitle: true,),
+      appBar: AppBar(
+        backgroundColor: Color(0xFFECD8C9),
+        title: Text('縣市',style: TextStyle(color: Color(0xFF613F26), fontWeight: FontWeight.bold,fontSize: 25),),
+        centerTitle: true,
+      ),
       body: ListView.builder(
         itemCount: cities.length,
         itemBuilder: (context, index) {
@@ -405,11 +419,7 @@ class DistrictPage extends StatefulWidget {
 }
 
 class _DistrictPageState extends State<DistrictPage> {
-  final Map<String, List<String>> cityDistricts = {
-    '台北市': ['中正區', '信義區', '大安區'],
-    '新北市': ['板橋區', '中和區', '永和區'],
-    '高雄市': ['三民區', '鼓山區', '苓雅區'],
-  };
+  
   String? _selectedDistrict;
 
   @override
@@ -418,7 +428,8 @@ class _DistrictPageState extends State<DistrictPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('選擇${widget.city}的地區'),
+        backgroundColor: Color(0xFFECD8C9),
+        title: Text('${widget.city}',style: TextStyle(color: Color(0xFF613F26), fontWeight: FontWeight.bold,fontSize: 25),),
         centerTitle: true,
         actions: [
           Padding(padding: EdgeInsets.only(right: 10),
@@ -426,7 +437,7 @@ class _DistrictPageState extends State<DistrictPage> {
               if (_selectedDistrict != null) {
                 Navigator.pop(context, {'city': widget.city, 'district': _selectedDistrict});
               }
-            }, child: Text('確認')),
+            }, child: Text('確認',style: TextStyle(color: Color(0xFF613F26),fontSize: 18),)),
           ) 
         ],
       ),
@@ -743,6 +754,15 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                   ? _selectedOtherOptions.join(', ')
                   : '不限',
             ),
+            SizedBox(height: 20,),
+            Align(
+              alignment: Alignment.center,
+              child: ElevatedButton(
+                onPressed: (){}, 
+                style: ButtonStyle(backgroundColor: MaterialStatePropertyAll(Color(0xFF613F26)),),
+                child: Text('搜尋',style: TextStyle(color: const Color.fromARGB(255, 246, 246, 246),fontSize: 18),)
+              ),
+            )
           ],
         ),
       ),

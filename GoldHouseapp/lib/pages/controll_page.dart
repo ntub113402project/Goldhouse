@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'search_page.dart';
 import 'personal_page.dart';
+import 'subscription_page.dart';
 
 
 class ControllPage extends StatefulWidget {
@@ -15,7 +16,7 @@ class _ControllPageState extends State<ControllPage>{
     HomePage(),
     SearchPage(),
     HomePage(),
-    HomePage(),
+    SubscriptionPage(),
     PersonalPage(),
   ];
   final PageStorageBucket bucket = PageStorageBucket();
@@ -69,9 +70,9 @@ class _ControllPageState extends State<ControllPage>{
             ),
             SizedBox(width: 80),  
             _buildTabItem(
-              icon: Icons.home,
+              icon: Icons.notifications,
               index: 3,
-              label: '首頁',
+              label: '訂閱',
             ),
             _buildTabItem(
               icon: Icons.person,
