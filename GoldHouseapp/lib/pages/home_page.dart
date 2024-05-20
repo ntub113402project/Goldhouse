@@ -118,7 +118,7 @@ class HouseList extends StatelessWidget {
             ],
           ),
           child: GestureDetector(
-            onTap: () {},
+            onTap: () {Navigator.pushNamed(context, '/housedetail');},
             child: Stack(
               children: [
                 Card(

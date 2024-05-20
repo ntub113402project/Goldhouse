@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'class.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 
 class SearchPage extends StatefulWidget {
   
@@ -388,8 +389,10 @@ class CityPage extends StatelessWidget {
       body: ListView.builder(
         itemCount: cities.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(cities[index]),
+          return Column(
+            children: [
+              ListTile(
+            title: Text(cities[index],style: TextStyle(color: Color.fromARGB(255, 46, 46, 46),fontSize: 18,),),
             onTap: () {
               Navigator.push(
                 context,
@@ -402,6 +405,12 @@ class CityPage extends StatelessWidget {
                 }
               });
             },
+          ),
+          Padding(
+            padding: EdgeInsets.only(right: 10,left: 10),
+            child: Divider(height: 5,color: const Color.fromARGB(255, 221, 221, 221),),
+          )
+            ],
           );
         },
       ),
@@ -444,15 +453,25 @@ class _DistrictPageState extends State<DistrictPage> {
       body: ListView.builder(
         itemCount: districts.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(districts[index]),
+
+          return Column(
+            children: [
+              ListTile(
+            title: Text(districts[index],style: TextStyle(color: Color.fromARGB(255, 46, 46, 46),fontSize: 18,)),
             trailing: _selectedDistrict == districts[index] ? Icon(Icons.check) : null,
             onTap: () {
               setState(() {
                 _selectedDistrict = districts[index];
               });
             },
+          ),
+          Padding(
+            padding: EdgeInsets.only(right: 10,left: 10),
+            child: Divider(height: 5,color: const Color.fromARGB(255, 221, 221, 221),),
+          )
+            ],
           );
+          
         },
       ),
     );
@@ -775,25 +794,38 @@ class CityMRTPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('選擇捷運'),centerTitle: true,),
+      appBar: AppBar(
+        backgroundColor: Color(0xFFECD8C9),
+        title: Text('捷運',style: TextStyle(color: Color(0xFF613F26), fontWeight: FontWeight.bold,fontSize: 25),),
+        centerTitle: true,
+      ),
       body: ListView.builder(
         itemCount: citiesMRT.length,
         itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(citiesMRT[index]),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MRTCombinedPage(MRT: citiesMRT[index]),
-                ),
-              ).then((result) {
-                if (result != null) {
-                  Navigator.pop(context, result);
-                }
-              });
+          return Column(
+            children: [
+              ListTile(
+              title: Text(citiesMRT[index],style: TextStyle(color: Color.fromARGB(255, 46, 46, 46),fontSize: 18,)),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MRTCombinedPage(MRT: citiesMRT[index]),
+                  ),
+                ).then((result) {
+                  if (result != null) {
+                    Navigator.pop(context, result);
+                  }
+                });
             },
+          ),
+          Padding(
+            padding: EdgeInsets.only(right: 10,left: 10),
+            child: Divider(height: 5,color: const Color.fromARGB(255, 221, 221, 221),),
+          )
+            ],
           );
+          
         },
       ),
     );
@@ -842,7 +874,8 @@ class _MRTCombinedPageState extends State<MRTCombinedPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.MRT}線路及站點'),
+        backgroundColor: Color(0xFFECD8C9),
+        title: Text('${widget.MRT}',style: TextStyle(color: Color(0xFF613F26), fontWeight: FontWeight.bold,fontSize: 25),),
         centerTitle: true,
         actions: [
           Padding(
@@ -857,7 +890,7 @@ class _MRTCombinedPageState extends State<MRTCombinedPage> {
                   });
                 }
               },
-              child: Text('確認'),
+              child: Text('確認',style: TextStyle(color: Color(0xFF613F26),fontSize: 18),),
             ),
           ),
         ],
@@ -867,28 +900,57 @@ class _MRTCombinedPageState extends State<MRTCombinedPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('選擇線路', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-              value: _selectedLine,
-              hint: Text('選擇線路'),
-              items: lines.map((line) {
-                return DropdownMenuItem<String>(
-                  value: line,
-                  child: Text(line),
-                );
-              }).toList(),
-              onChanged: _onLineChanged,
-              isExpanded: true,
+            Text('線路', style: TextStyle(color: Color.fromARGB(255, 46, 46, 46), fontSize: 22, fontWeight: FontWeight.bold)),
+            SizedBox(height: 10,),
+            DropdownButton2<String>(
+            value: _selectedLine,
+            hint: Text(
+              '選擇線路',
+              style: TextStyle(fontSize: 17),
             ),
-            SizedBox(height: 16),
+            items: lines.map((line) {
+              return DropdownMenuItem<String>(
+                value: line,
+                child: Text(line,style: TextStyle(fontSize: 17)),
+              );
+            }).toList(),
+            onChanged: _onLineChanged,
+            isExpanded: true,
+            buttonStyleData: ButtonStyleData(
+              height: 48,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            dropdownStyleData: DropdownStyleData(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            iconStyleData: IconStyleData(
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: Colors.grey,
+              ),
+            ),
+            menuItemStyleData: MenuItemStyleData(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: 48,
+            ),
+          ),
+        
+            SizedBox(height: 20),
             if (_stations.isNotEmpty) ...[
-              Text('選擇站點', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('站點',style: TextStyle(color: Color.fromARGB(255, 46, 46, 46), fontSize: 22, fontWeight: FontWeight.bold)),
               ListView.builder(
                 shrinkWrap: true,
                 itemCount: _stations.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(_stations[index]),
+                    title: Text(_stations[index],style: TextStyle(fontSize: 17),),
                     trailing: _selectedStation == _stations[index] ? Icon(Icons.check) : null,
                     onTap: () {
                       setState(() {
