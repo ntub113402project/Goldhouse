@@ -10,24 +10,23 @@ class RegisterPage extends StatefulWidget {
 
   
 class _RegisterPageState extends State<RegisterPage> {
-  int _radiogroupA=0;
+  int _radiogroupA=1;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   TextEditingController nameController = TextEditingController();
-  TextEditingController accountController = TextEditingController();
-  TextEditingController passwordController = TextEditingController();
-  TextEditingController confirmPasswordController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
 
   Future<void> registerUser() async {
     var url = Uri.parse('http://4.227.176.245:5000/register');
     var response = await http.post(url, body: json.encode({
       'name': nameController.text,
-      'account': accountController.text,
-      'password': passwordController.text,
-      'phone': phoneController.text,
       'gmail': emailController.text,
+      'phone': phoneController.text,
+      'gender': _radiogroupA,
+      'password': passwordController.text,
     }), headers: {
       'Content-Type': 'application/json'
     });
@@ -36,11 +35,11 @@ class _RegisterPageState extends State<RegisterPage> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Error'),
-            content: const Text('Passwords do not match.'),
+            title: const Text('註冊失敗'),
+            content: const Text('密碼不一致，請重新輸入'),
             actions: <Widget>[
               TextButton(
-                child: const Text('OK'),
+                child: const Text('確認'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -59,7 +58,7 @@ class _RegisterPageState extends State<RegisterPage> {
             content: const Text('註冊成功'),
             actions: <Widget>[
               TextButton(
-                child: const Text('OK'),
+                child: const Text('確認，回首頁'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -69,15 +68,17 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
     } else {
-      // Handle errors
+      // final Map<String, dynamic> responseData = json.decode(response.body);
+      // final errorMessage = responseData['error'] ?? '未知錯誤';
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
+            title: Text('註冊失敗'),
             content: Text('註冊失敗'),
             actions: <Widget>[
               TextButton(
-                child: const Text('OK'),
+                child: const Text('確認'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -89,7 +90,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
   void _handleRadioValuChanged(int? value){
-    setState((){
+    setState((){      
       _radiogroupA=value ?? 0;
     });
   }
@@ -132,47 +133,25 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 10,),
-            // Padding(
-            //   padding: EdgeInsets.all(10),
-            //   child: Text('性別',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
-            // ),
-            // Row(
-            //   children: [
-            //     Radio(
-            //       value: 1,
-            //       groupValue: _radiogroupA,
-            //       onChanged: _handleRadioValuChanged,
-            //     ),
-            //     const Text('男性',style: TextStyle(fontSize: 16,color: Color(0xFF613F26)),),
-            //     Radio(
-            //       value: 2,
-            //       groupValue: _radiogroupA,
-            //       onChanged: _handleRadioValuChanged,
-            //     ),
-            //     const Text('女性',style: TextStyle(fontSize: 16,color: Color(0xFF613F26)),),
-            //   ],
-            // ),
             Padding(
               padding: EdgeInsets.all(10),
-              child: Text('帳號',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
+              child: Text('性別',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
             ),
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(30),
-                color: const Color(0xFFEFEBE9),
-              ),
-              child: Padding(
-                padding: EdgeInsets.only(left: 10),
-                child: TextField(
-                  controller: accountController,
-                  decoration: InputDecoration(
-                    hintText: ('請輸入帳號'),
-                    hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
-                    border: InputBorder.none
-                  ),
-                )
-              ),
+            Row(
+              children: [
+                Radio(
+                  value: 1,
+                  groupValue: _radiogroupA,
+                  onChanged: _handleRadioValuChanged,
+                ),
+                const Text('男性',style: TextStyle(fontSize: 16,color: Color(0xFF613F26)),),
+                Radio(
+                  value: 2,
+                  groupValue: _radiogroupA,
+                  onChanged: _handleRadioValuChanged,
+                ),
+                const Text('女性',style: TextStyle(fontSize: 16,color: Color(0xFF613F26)),),
+              ],
             ),
             const SizedBox(height: 10,),
             Padding(

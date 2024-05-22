@@ -19,7 +19,7 @@ void main() {
         '/personal':(context) => PersonalPage(),
         '/housedetail':(context) => HouseDetailPage(),
       },
-      home: LoginPage(),
+      home: ControllPage(),
     )
   );
 }
