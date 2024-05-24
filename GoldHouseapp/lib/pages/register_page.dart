@@ -13,7 +13,7 @@ class _RegisterPageState extends State<RegisterPage> {
   int _radiogroupA=1;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  TextEditingController nameController = TextEditingController();
+  TextEditingController usernameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -22,7 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Future<void> registerUser() async {
     var url = Uri.parse('http://4.227.176.245:5000/register');
     var response = await http.post(url, body: json.encode({
-      'name': nameController.text,
+      'username': usernameController.text,
       'gmail': emailController.text,
       'phone': phoneController.text,
       'gender': _radiogroupA,
@@ -58,9 +58,9 @@ class _RegisterPageState extends State<RegisterPage> {
             content: const Text('註冊成功'),
             actions: <Widget>[
               TextButton(
-                child: const Text('確認，回首頁'),
+                child: const Text('確認，去登入'),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  Navigator.pushNamed(context, '/login');
                 },
               ),
             ],
@@ -68,14 +68,14 @@ class _RegisterPageState extends State<RegisterPage> {
         },
       );
     } else {
-      // final Map<String, dynamic> responseData = json.decode(response.body);
-      // final errorMessage = responseData['error'] ?? '未知錯誤';
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      final errorMessage = responseData['error'] ?? '未知錯誤';
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('註冊失敗'),
-            content: Text('註冊失敗'),
+            content: Text(errorMessage),
             actions: <Widget>[
               TextButton(
                 child: const Text('確認'),
@@ -123,7 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Padding(
                 padding: EdgeInsets.only(left: 10),
                 child: TextField(
-                  controller: nameController,
+                  controller: usernameController,
                   decoration: InputDecoration(
                     hintText: ('請輸入姓名'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),

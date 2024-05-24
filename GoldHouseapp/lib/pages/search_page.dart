@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'class.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 
 class SearchPage extends StatefulWidget {
@@ -9,6 +8,7 @@ class SearchPage extends StatefulWidget {
 }
 
 class _SearchPageState extends State<SearchPage> {
+  
   @override 
   Widget build(BuildContext context){
     return DefaultTabController(
@@ -377,7 +377,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
 }
 
 class CityPage extends StatelessWidget {
-
+  final List<String> cities = ['台北市', '新北市', '基隆市', '宜蘭縣', '桃園市', '新竹市', '新竹縣', '新竹市', '高雄市',];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -428,7 +428,11 @@ class DistrictPage extends StatefulWidget {
 }
 
 class _DistrictPageState extends State<DistrictPage> {
-  
+  final Map<String, List<String>> cityDistricts = {
+    '台北市': ['不限','中正區', '萬華區', '中山區','大同區','士林區'],
+    '新北市': ['不限','板橋區', '中和區', '永和區'],
+    '高雄市': ['不限','三民區', '鼓山區', '苓雅區'],
+  };
   String? _selectedDistrict;
 
   @override

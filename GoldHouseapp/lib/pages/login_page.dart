@@ -10,13 +10,13 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible= false;
-  TextEditingController accountController = TextEditingController();
+  TextEditingController gmailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
   Future<void> LoginUser() async {
     var url = Uri.parse('http://4.227.176.245:5000/login');
     var response = await http.post(url, body: json.encode({
-      'account': accountController.text,
+      'gmail': gmailController.text,
       'password': passwordController.text,
     }), headers: {
       'Content-Type': 'application/json'
@@ -39,15 +39,16 @@ class _LoginPageState extends State<LoginPage> {
         },
       );
     } else {
-      // Handle errors
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      final errorMessage = responseData['error'] ?? '未知錯誤';
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            content: Text('登入失敗'),
+            content: Text(errorMessage),
             actions: <Widget>[
               TextButton(
-                child: const Text('OK'),
+                child: const Text('確認'),
                 onPressed: () {
                   Navigator.of(context).pop();
                 },
@@ -96,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(height: 15,),
                         Container(  
                           alignment: Alignment.centerLeft,
-                          child:  Text('帳號',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
+                          child:  Text('電子郵件',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
                         ),
                         SizedBox(height: 5,),
                         Container(
@@ -107,9 +108,9 @@ class _LoginPageState extends State<LoginPage> {
                           child: Padding(
                             padding: EdgeInsets.only(left: 10),
                             child: TextField(
-                              controller: accountController,
+                              controller: gmailController,
                               decoration: InputDecoration(
-                                hintText: ('請輸入帳號'),
+                                hintText: ('請輸入電子郵件'),
                                 hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                                 border: InputBorder.none
                               ),
