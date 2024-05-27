@@ -205,7 +205,7 @@ def search_houses():
             query += " AND pattern = %s"
             params.append(room_type)
         elif room_type == "整層住家":
-            query += " AND (pattern = %s OR pattern LIKE %s)"
+            query += " AND (pattern = %s OR pattern LIKE %s) AND pattern NOT IN ('獨立套房', '分租套房', '雅房') "
             params.append('整層住家')
             params.append('%'+'房'+'%')
             
@@ -230,10 +230,10 @@ def search_houses():
     if filters.get('house_size'): #* [int, int] 坪數
         house_size = filters['house_size']
         if house_size[0] != -1:
-            query += " AND CAST(SUBSTRING_INDEX(size, '坪', 1) AS UNSIGNED) >= %s"
+            query += " AND CAST(SUBSTRING_INDEX(size, '坪', 1) AS DECIMAL(5,2)) >= %s"
             params.append(house_size[0])
         if house_size[1] != -1:
-            query += " AND CAST(SUBSTRING_INDEX(size, '坪', 1) AS UNSIGNED) <= %s"
+            query += " AND CAST(SUBSTRING_INDEX(size, '坪', 1) AS DECIMAL(5,2)) <= %s"
             params.append(house_size[1])
 
     if filters.get('house_type'): #* String 房型
