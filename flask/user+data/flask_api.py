@@ -201,13 +201,13 @@ def search_houses():
 
     if filters.get('room_type'): #* [int, int] 房屋類型
         room_type = filters.get('room_type')
-        if room_type == "獨立套房" or "雅房" or "分租套房":
+        if room_type == "獨立套房" or room_type == "雅房" or room_type == "分租套房":
             query += " AND pattern = %s"
-            params.append(filters['room_count'])
+            params.append(room_type)
         elif room_type == "整層住家":
-            query += " AND (room_type = %s OR pattern LIKE %s)"
-            params.append("整層住家")
-            params.append('%房%')
+            query += " AND (pattern = %s OR pattern LIKE %s)"
+            params.append('整層住家')
+            params.append('%'+'房'+'%')
             
     if filters.get('rental_range'): #* [int, int] 租金
         rental_range = filters['rental_range']
@@ -262,9 +262,6 @@ def search_houses():
         'subway':result[10],
         'bus':result[11]
     } for result in results]
-
-    print(f"{query}\n\n{params}")
-    print(data)
 
     return jsonify(data), 200
 
