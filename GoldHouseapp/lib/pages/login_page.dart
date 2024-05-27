@@ -1,6 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class LoginFirstPage extends StatelessWidget{
+  @override
+  Widget build(BuildContext context){
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Color(0xFFECD8C9),
+        title: Image.asset("assets/logo_words.png",fit: BoxFit.contain,height: 70,),
+        centerTitle: true,
+      ),
+      body: Center(
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF613F26)),
+          onPressed: (){Navigator.pushNamed(context, '/login');}, 
+          child: Text('按這裡登入',style: TextStyle(color: const Color.fromARGB(255, 245, 245, 245)),),
+        ),
+      ),
+    );
+  }
+}
 
 class LoginPage extends StatefulWidget {
   
@@ -22,6 +43,15 @@ class _LoginPageState extends State<LoginPage> {
       'Content-Type': 'application/json'
     });
     if (response.statusCode == 200) {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      final members = responseData['members'];
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('username', members['username']);
+      await prefs.setString('gmail', members['gmail']);
+      await prefs.setString('phone', members['phone']);
+      await prefs.setString('gender', members['gender']);
+      await prefs.setBool('isLoggedIn', true);
+
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -31,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
               TextButton(
                 child: const Text('OK'),
                 onPressed: () {
-                  Navigator.pushNamed(context, '/personal');
+                  Navigator.pushNamed(context, '/controll', arguments: members);
                 },
               ),
             ],
@@ -62,22 +92,35 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: const Color(0xFFC5AE9D),
       body: Padding(
         padding: const EdgeInsetsDirectional.only(top: 0),
         child: Column(
-          children: <Widget>[
-            
+          children: <Widget>[            
             Expanded(
               flex: 3,
-              child: Container(
-                decoration: const BoxDecoration(
-                  image: DecorationImage( 
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: const BoxDecoration(
+                    image: DecorationImage( 
                     image: AssetImage('assets/Logo.png',),
                     fit: BoxFit.cover),
-                ),
-              ),
+                    ),             
+                  ),
+                  Positioned(
+                    top:40,
+                    left: 12,
+                    child: IconButton(
+                      onPressed: (){Navigator.pop(context);}, 
+                      icon: Icon(Icons.arrow_back_rounded, size: 35,color: Colors.black,)
+                    )
+                  ), 
+                ],
+              )              
             ),
+            
             
             
             Expanded(
