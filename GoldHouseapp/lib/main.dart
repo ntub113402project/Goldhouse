@@ -18,6 +18,7 @@ void main() {
         '/search':(context) => SearchPage(),
         '/personal':(context) => PersonalPage(),
         '/housedetail':(context) => HouseDetailPage(),
+        '/controll':(context) => ControllPage(),
       },
       home: ControllPage(),
     )

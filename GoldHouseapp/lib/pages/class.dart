@@ -65,6 +65,35 @@ final Map<String, bool> furnitureMap = {
     '椅子': true,
   };
 
-    
+class HouseDetail {
+  final String hid;
+  final String url;
+  final String title;
+  final String pattern;
+  final String size;
+  final String layer;
+  final String type;
+  final int price;
+  final String deposit;
+  final String address;
+  final String subway;
+  final String bus;
+
+  HouseDetail({
+    required this.hid,
+    required this.url,
+    required this.title,
+    required this.pattern,
+    required this.size,
+    required this.layer,
+    required this.type,
+    required this.price,
+    required this.deposit,
+    required this.address,
+    required this.subway,
+    required this.bus,
+  });
+
+}    
 
     

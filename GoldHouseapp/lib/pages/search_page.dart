@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SearchPage extends StatefulWidget {
   
@@ -63,6 +66,125 @@ class _SearchPageState extends State<SearchPage> {
     );    
   }
 }
+class SearchResultPage extends StatelessWidget {
+  final List<dynamic> searchResults;
+
+  SearchResultPage({Key? key, required this.searchResults}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('搜尋結果'),
+        backgroundColor: Color(0xFFECD8C9),
+      ),
+      body: ListView.builder(
+        itemCount: searchResults.length,
+        itemBuilder: (context, index) {
+          var result = searchResults[index];
+          return Container(
+            width: MediaQuery.of(context).size.width,
+            height: 130,
+            margin: EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 1,
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: GestureDetector(
+              onTap: () {
+              },
+              child: Stack(
+                children: [
+                  Card(
+                    elevation: 0,
+                    margin: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(8),
+                            bottomLeft: Radius.circular(8),
+                          ),
+                          // child: Image.network(
+                          //   result['imageUrl'], 
+                          //   fit: BoxFit.cover,
+                          //   width: MediaQuery.of(context).size.width * 0.35,
+                          //   height: double.infinity,
+                          // ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${result['pattern']} | ${result['title']}',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  '${result['size']}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  '${result['address']}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 6,
+                    right: 8,
+                    child: Text(
+                      '${result['price']}元/月',
+                      style: TextStyle(
+                        color: Color.fromARGB(255, 249, 58, 58),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 
 
 class AreaSearchPage extends StatefulWidget {
@@ -79,6 +201,81 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
   String _selectedHouseSize = '不限';
   String _selectedHouseType = '不限';
   List<String> _selectedOtherOptions = [];
+  Future<void> _search(BuildContext context) async {
+    try{
+      //資料預處理
+      String rentalRange = _selectedRentalRange == '不限' ? '' : _selectedRentalRange;
+      String houseSize = _selectedHouseSize == '不限' ? '' : _selectedHouseSize;
+
+      // 租金資料處理
+      List<int>? rentalRangeList;
+      if (rentalRange.contains('以下')) {
+        int maxSize = int.tryParse(rentalRange.replaceAll('元以下', '').replaceAll(',', '').trim()) ?? 0;
+        rentalRangeList = [-1, maxSize];
+      } else if (rentalRange.contains('以上')) {
+        int minSize = int.tryParse(rentalRange.replaceAll('元以上', '').replaceAll(',', '').trim()) ?? 0;
+        rentalRangeList = [minSize, -1];
+      } else if (rentalRange.contains('－')) {
+        List<String> rentParts = rentalRange.replaceAll('元', '').split('－');
+        if (rentParts.length == 2) {
+          rentalRangeList = [
+            int.tryParse(rentParts[0].replaceAll(',', '').trim()) ?? 0,
+            int.tryParse(rentParts[1].replaceAll(',', '').trim()) ?? 0
+          ];
+        }
+      }
+
+      // 坪數資料處理
+      List<int>? houseSizeList;
+      if (houseSize.contains('以下')) {
+        int maxSize = int.tryParse(houseSize.replaceAll('坪以下', '').trim()) ?? 0;
+        houseSizeList = [-1, maxSize];
+      } else if (houseSize.contains('以上')) {
+        int minSize = int.tryParse(houseSize.replaceAll('坪以上', '').trim()) ?? 0;
+        houseSizeList = [minSize, -1];
+      } else if (houseSize.contains('－')) {
+        List<String> sizeParts = houseSize.split('－');
+        if (sizeParts.length == 2) {
+          houseSizeList = [
+            int.tryParse(sizeParts[0].replaceAll('坪', '').trim()) ?? 0,
+            int.tryParse(sizeParts[1].replaceAll('坪', '').trim()) ?? 0
+          ];
+        }
+      }
+
+      final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/search'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'city': _selectedCity == '不限' ? null : _selectedCity,
+        'district': _selectedDistrict == '不限' ? null : _selectedDistrict,
+        'room_type': _selectedRoomType == '不限' ? null : _selectedRoomType,
+        'rental_range': rentalRangeList == null ? null : rentalRangeList,
+        'room_count': _selectedRoomCount == '不限' ? null : int.tryParse(_selectedRoomCount.replaceAll('房', '').trim()) ?? 4,
+        'house_size': houseSizeList == null ? null : houseSizeList,
+        'house_type': _selectedHouseType == '不限' ? null : _selectedHouseType,
+        'other_options': _selectedOtherOptions.join(',')
+        }),
+      );
+      if (response.statusCode == 200) {
+      List<dynamic> results = jsonDecode(response.body);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SearchResultPage(searchResults: results),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('搜尋失敗，請稍後再試')),
+      );
+    }
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('無法連線至伺服器或系統維護中')),
+    );
+  }
+}
 
   Widget _buildListTile(String titleText, void Function()? onTap, {String? trailingText}) {
     return InkWell(
@@ -161,7 +358,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
   }
 
   void _RoomTypeBottomSheet(BuildContext context) {
-    List<String> roomTypes = ['整層住家', '獨立套房', '分租套房'];
+    List<String> roomTypes = ['不限','雅房','整層住家', '獨立套房', '分租套房'];
     _showSelectionBottomSheet(
       context: context,
       title: '房屋類型',
@@ -176,26 +373,133 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
   }
 
   void _RentalBottomSheet(BuildContext context) {
-    List<String> rentalRange = [
-      '0－5,000', '5,001－10,000', '10,001－15,000', '15,001－20,000',
-      '20,001－30,000', '30,001－40,000', '40,001元以上'
-    ];
+  List<String> rentalRange = [
+    '不限', '0－5,000元', '5,000－10,000元', '10,000－15,000元', '15,000－20,000元',
+    '20,000－30,000元', '30,000－40,000元', '40,000元以上'
+  ];
 
-    _showSelectionBottomSheet(
-      context: context,
-      title: '租金範圍',
-      options: rentalRange,
-      currentSelection: _selectedRentalRange,
-      onSelectionConfirmed: (String selectedRental) {
-        setState(() {
-          _selectedRentalRange = selectedRental;
-        });
-      },
-    );
-  }
+  TextEditingController minController = TextEditingController();
+  TextEditingController maxController = TextEditingController();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: Center(
+                    child: Text(
+                      '租金範圍',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ),
+                ),
+                ...rentalRange.map((range) {
+                  return ListTile(
+                    title: Text(range),
+                    onTap: () {
+                      Navigator.pop(context, range);
+                    },
+                  );
+                }).toList(),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: minController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: '最低金額',
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text('－'),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: maxController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: '最高金額',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    String min = minController.text;
+                    String max = maxController.text;
+                    if (min.isEmpty && max.isNotEmpty) {
+                      String customRange = '$max元以下';
+                      Navigator.pop(context, customRange);
+                    }
+                    else if (min.isNotEmpty && max.isEmpty) {
+                      String customRange = '$min元以上';
+                      Navigator.pop(context, customRange);
+                    }
+                    else if (min.isNotEmpty && max.isNotEmpty) {
+                      int minVal = int.parse(min);
+                      int maxVal = int.parse(max);
+                      if (minVal >= maxVal) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('輸入錯誤'),
+                              content: Text('最高金額必需大於最低金額'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('確認'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        String customRange = '$min元－$max元';
+                        Navigator.pop(context, customRange);
+                      }
+                    }
+                  },
+                  child: Text('確認'),
+                ),
+                SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  ).then((selectedRange) {
+    if (selectedRange != null) {
+      setState(() {
+        _selectedRentalRange = selectedRange;
+      });
+    }
+  });
+}
 
   void _RoomCountBottomSheet(BuildContext context) {
-    List<String> roomcount = ['1房', '2房', '3房', '4房以上'];
+    List<String> roomcount = ['不限','1房', '2房', '3房', '4房以上'];
     _showSelectionBottomSheet(
       context: context,
       title: '格局',
@@ -210,7 +514,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
   }
 
   void _HouseSizeBottomSheet(BuildContext context) {
-    List<String> housesize = ['10坪以下', '10－20坪', '20－30坪', '30－40坪','40－50坪','50坪以上'];
+    List<String> housesize = ['不限','10坪以下', '10－20坪', '20－30坪', '30－40坪','40－50坪','50坪以上'];
     _showSelectionBottomSheet(
       context: context,
       title: '坪數',
@@ -224,10 +528,10 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
     );
   }
   void _HouseTypeBottomSheet(BuildContext context) {
-    List<String> houseTypes = ['別墅', '公寓', '電梯大樓','透天厝'];
+    List<String> houseTypes = ['不限','別墅', '公寓', '電梯大樓','透天厝'];
     _showSelectionBottomSheet(
       context: context,
-      title: '房屋類型',
+      title: '房屋型態',
       options: houseTypes,
       currentSelection: _selectedHouseType,
       onSelectionConfirmed: (String selectedType) {
@@ -238,60 +542,75 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
     );
   }
   void _showMultipleSelectionBottomSheet(BuildContext context) {
-    List<String> options = ['有陽台', '可養寵物', '可開伙'];
-    List<String> selectedOptions = List.from(_selectedOtherOptions); 
+  List<String> options = ['不限', '有陽台', '可養寵物', '可開伙'];
+  List<String> selectedOptions = ['不限'];
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, 
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('其他條件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    '其他條件',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  for (String option in options)
-                    CheckboxListTile(
-                      title: Text(option),
-                      value: selectedOptions.contains(option),
-                      onChanged: (bool? value) {
-                        setModalState(() {
+                ),
+                for (String option in options)
+                  CheckboxListTile(
+                    title: Text(option),
+                    value: selectedOptions.contains(option),
+                    onChanged: (bool? value) {
+                      setModalState(() {
+                        if (option == '不限') {
                           if (value == true) {
+                            selectedOptions.clear();
                             selectedOptions.add(option);
                           } else {
                             selectedOptions.remove(option);
                           }
-                        });
-                      },
-                    ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedOtherOptions = List.from(selectedOptions);
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: Text('確認'),
-                    ),
+                        } else {
+                          if (value == true) {
+                            selectedOptions.remove('不限');
+                            selectedOptions.add(option);
+                          } else {
+                            selectedOptions.remove(option);
+                          }
+                        }
+                      });
+                    },
                   ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedOtherOptions = List.from(selectedOptions);
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Text('確認'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
 
   
 
@@ -364,11 +683,13 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
             Align(
               alignment: Alignment.center,
               child: ElevatedButton(
-                onPressed: (){}, 
-                style: ButtonStyle(backgroundColor: MaterialStatePropertyAll(Color(0xFF613F26)),),
-                child: Text('搜尋',style: TextStyle(color: const Color.fromARGB(255, 246, 246, 246),fontSize: 18),)
+                onPressed: () {
+                  _search(context);
+                },
+                style: ButtonStyle(backgroundColor: MaterialStatePropertyAll(Color(0xFF613F26))),
+                child: Text('搜尋', style: TextStyle(color: Colors.white, fontSize: 18)),
               ),
-            )            
+            )           
           ],
         ),
       ),
@@ -483,6 +804,7 @@ class _DistrictPageState extends State<DistrictPage> {
 }
 
 
+
 class MRTSearchPage extends StatefulWidget {
   @override
   _MRTSearchPageState createState() => _MRTSearchPageState();
@@ -579,7 +901,7 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
   }
 
   void _RoomTypeBottomSheet(BuildContext context) {
-    List<String> roomTypes = ['整層住家', '獨立套房', '分租套房'];
+    List<String> roomTypes = ['不限','整層住家', '獨立套房', '分租套房','雅房'];
     _showSelectionBottomSheet(
       context: context,
       title: '房屋類型',
@@ -594,25 +916,134 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
   }
 
   void _RentalBottomSheet(BuildContext context) {
-    List<String> rentalRange = [
-      '0－5,000', '5,001－10,000', '10,001－15,000', '15,001－20,000',
-      '20,001－30,000', '30,001－40,000', '40,001元以上'
-    ];
-    _showSelectionBottomSheet(
-      context: context,
-      title: '租金範圍',
-      options: rentalRange,
-      currentSelection: _selectedRentalRange,
-      onSelectionConfirmed: (String selectedRental) {
-        setState(() {
-          _selectedRentalRange = selectedRental;
-        });
-      },
-    );
-  }
+  List<String> rentalRange = [
+    '不限', '0－5,000元', '5,000－10,000元', '10,000－15,000元', '15,000－20,000元',
+    '20,000－30,000元', '30,000－40,000元', '40,000元以上'
+  ];
+
+  TextEditingController minController = TextEditingController();
+  TextEditingController maxController = TextEditingController();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  title: Center(
+                    child: Text(
+                      '租金範圍',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ),
+                ),
+                ...rentalRange.map((range) {
+                  return ListTile(
+                    title: Text(range),
+                    onTap: () {
+                      Navigator.pop(context, range);
+                    },
+                  );
+                }).toList(),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: minController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: '最低金額',
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text('－'),
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: maxController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                          decoration: InputDecoration(
+                            labelText: '最高金額',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    String min = minController.text;
+                    String max = maxController.text;
+                    if (min.isEmpty && max.isNotEmpty) {
+                      String customRange = '$max元以下';
+                      Navigator.pop(context, customRange);
+                    }
+                    else if (min.isNotEmpty && max.isEmpty) {
+                      String customRange = '$min元以上';
+                      Navigator.pop(context, customRange);
+                    }
+                    else if (min.isNotEmpty && max.isNotEmpty) {
+                      int minVal = int.parse(min);
+                      int maxVal = int.parse(max);
+                      if (minVal >= maxVal) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('輸入錯誤'),
+                              content: Text('最高金額必需大於最低金額'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('確認'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        String customRange = '$min元－$max元';
+                        Navigator.pop(context, customRange);
+                      }
+                    }
+                  },
+                  child: Text('確認'),
+                ),
+                SizedBox(height: 10),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  ).then((selectedRange) {
+    if (selectedRange != null) {
+      setState(() {
+        _selectedRentalRange = selectedRange;
+      });
+    }
+  });
+}
+
 
   void _RoomCountBottomSheet(BuildContext context) {
-    List<String> roomcount = ['1房', '2房', '3房', '4房以上'];
+    List<String> roomcount = ['不限','1房', '2房', '3房', '4房以上'];
     _showSelectionBottomSheet(
       context: context,
       title: '格局',
@@ -627,7 +1058,7 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
   }
 
   void _HouseSizeBottomSheet(BuildContext context) {
-    List<String> housesize = ['10坪以下', '10－20坪', '20－30坪', '30－40坪','40－50坪','50坪以上'];
+    List<String> housesize = ['不限','10坪以下', '10－20坪', '20－30坪', '30－40坪','40－50坪','50坪以上'];
     _showSelectionBottomSheet(
       context: context,
       title: '坪數',
@@ -641,7 +1072,7 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
     );
   }
   void _HouseTypeBottomSheet(BuildContext context) {
-    List<String> houseTypes = ['別墅', '公寓', '電梯大樓','透天厝'];
+    List<String> houseTypes = ['不限','別墅', '公寓', '電梯大樓','透天厝'];
     _showSelectionBottomSheet(
       context: context,
       title: '房屋類型',
@@ -655,60 +1086,73 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
     );
   }
   void _showMultipleSelectionBottomSheet(BuildContext context) {
-    List<String> options = ['有陽台', '可養寵物', '可開伙'];
-    List<String> selectedOptions = List.from(_selectedOtherOptions); 
+  List<String> options = ['不限', '有陽台', '可養寵物', '可開伙'];
+  List<String> selectedOptions = ['不限'];
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, 
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text('其他條件', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setModalState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    '其他條件',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  for (String option in options)
-                    CheckboxListTile(
-                      title: Text(option),
-                      value: selectedOptions.contains(option),
-                      onChanged: (bool? value) {
-                        setModalState(() {
+                ),
+                for (String option in options)
+                  CheckboxListTile(
+                    title: Text(option),
+                    value: selectedOptions.contains(option),
+                    onChanged: (bool? value) {
+                      setModalState(() {
+                        if (option == '不限') {
                           if (value == true) {
+                            selectedOptions.clear();
                             selectedOptions.add(option);
                           } else {
                             selectedOptions.remove(option);
                           }
-                        });
-                      },
-                    ),
-                  Padding(
-                    padding: EdgeInsets.all(8),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedOtherOptions = List.from(selectedOptions);
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: Text('確認'),
-                    ),
+                        } else {
+                          if (value == true) {
+                            selectedOptions.remove('不限');
+                            selectedOptions.add(option);
+                          } else {
+                            selectedOptions.remove(option);
+                          }
+                        }
+                      });
+                    },
                   ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
+                Padding(
+                  padding: EdgeInsets.all(8),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedOtherOptions = List.from(selectedOptions);
+                      });
+                      Navigator.pop(context);
+                    },
+                    child: Text('確認'),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 
   
 

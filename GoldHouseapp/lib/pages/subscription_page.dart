@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 
 class SubscriptionPage extends StatefulWidget {
@@ -9,9 +10,9 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<Map<String, dynamic>> subscriptions = [];
   List<Map<String, String>> properties = [
-    {'city': '台北市', 'area': '信義區', 'type': '獨立套房','rent': '20000', 'layout': '2房1廳'},
-    {'city': '台北市', 'area': '大安區', 'type': '整層住家','rent': '25000', 'layout': '3房2廳'},
-    {'city': '新北市', 'area': '板橋區', 'type': '獨立套房','rent': '15000', 'layout': '1房1廳'},
+    {'title':'某套房','city': '台北市', 'area': '信義區', 'type': '獨立套房','price': '20000', 'size': '10坪', 'roomcount':'1房'},
+    {'title':'某雅房','city': '台北市', 'area': '大安區', 'type': '整層住家','price': '25000', 'size': '10坪', 'roomcount':'1房'},
+    {'title':'某分租','city': '新北市', 'area': '板橋區', 'type': '獨立套房','price': '15000', 'size': '10坪', 'roomcount':'1房'},
   ];
 
   void _addSubscription(Map<String, dynamic> subscription) {
@@ -67,8 +68,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 final matchingProps = _getMatchingProperties(subscription);
 
                 return ExpansionTile(
-                  title: Text('${subscription['city'] }, 類型：${subscription['type'].isEmpty ? '不限' :subscription['type']}'),
-                  subtitle: Text('地區：${subscription['areas'].isEmpty ? '不限' : subscription['areas'].join(', ')}'),
+                  title: Text('${subscription['city']} ${subscription['areas'].isEmpty ? '' :subscription['areas'].join(', ')}',
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  ),
+                  subtitle: Text('類型:${subscription['type'].isEmpty ? '' : subscription['type'].join(', ')} ${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']} 格局:${subscription['roomcount']} 坪數:${subscription['size']} ${subscription['types'].isEmpty ? '' : subscription['types'].join(', ')}' ,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+
+                  ),
 
                   trailing: IconButton(
                     icon: Icon(Icons.delete),
@@ -79,50 +87,105 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   children: matchingProps
     .map((property) => GestureDetector(
         onTap: () { Navigator.pushNamed(context, '/housedetail'); },
-        child: Stack(
-          children: [
-            Card(
-              elevation: 0,
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: MediaQuery.of(context).size.width,
+          height: 130,
+          margin: EdgeInsets.only(left: 20,right: 20,top: 10,bottom: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.5),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: Offset(0, 2),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${property['type']} |',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.clip,
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            ' ${property['city']}${property['area']}',
-                            style: TextStyle(
-                              fontSize: 14,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.clip,
-                          ),
-                        ],
-                      ),
-                    ),
+            ],
+          ),
+          child: GestureDetector(
+            onTap: () {Navigator.pushNamed(context, '/housedetail');},
+            child: Stack(
+              children: [
+                Card(
+                  elevation: 0,
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ],
-              ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                        ),
+                        // child: Image.network(
+                        //   houses[index].imageUrl,
+                        //   fit: BoxFit.cover,
+                        //   width: MediaQuery.of(context).size.width * 0.35,
+                        //   height: double.infinity,
+                        // ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${property['type']} | ${property['title']}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.clip,
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                '${property['size']} ${property['city']}${property['area']}',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.clip,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  bottom: 6,
+                  right: 8,
+                  child: Row(
+                    children: [
+                      Text(
+                        '${property['price']}',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 249, 58, 58),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        ' 元/月',
+                        style: TextStyle(
+                          color: Color.fromARGB(255, 249, 58, 58),
+                          fontSize: 13
+                        ),
+                      ), 
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),  
+        )
       ))
     .toList(), 
                 );
@@ -148,13 +211,24 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
   String _selectedCity = '台北市';
   List<String> _selectedAreas = [];
   List<String> availableCities = ['台北市', '新北市', '台中市'];
-  List<String> _selectedtype = [];
-  List<String> housetype = ['整層住家','獨立套房','分租套房','雅房'];
   Map<String, List<String>> areasByCity = {
     '台北市': ['信義區', '大安區', '中山區'],
     '新北市': ['板橋區', '新店區', '中和區'],
     '台中市': ['北屯區', '西屯區', '南屯區'],
   };
+  List<String> _selectedtype = [];
+  List<String> housetype = ['整層住家','獨立套房','分租套房','雅房'];
+  String _selectedRentalRange = '不限';
+  List<String> rentalRange = [
+    '不限', '0－5,000元', '5,000－10,000元', '10,000－15,000元', '15,000－20,000元',
+    '20,000－30,000元', '30,000－40,000元', '40,000元以上'
+  ];
+  List<String> roomcount = ['不限','1房', '2房', '3房', '4房以上'];
+  String _selectedRoomCount = '不限';
+  List<String> housesize = ['不限','10坪以下', '10－20坪', '20－30坪', '30－40坪','40－50坪','50坪以上'];
+  String _selectedHouseSize = '不限';
+  List<String> houseTypes = ['別墅', '公寓', '電梯大樓','透天厝'];
+  List<String> _selectedTypes = [];
 
   void _selectCity() async {
     String? selectedCity = await showModalBottomSheet<String>(
@@ -235,7 +309,8 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       });
     }
   }
-  void _selecttype() async{
+
+  void _selecttype() async {
     List<String>? selectedtype = await showModalBottomSheet<List<String>>(
       context: context,
       builder: (BuildContext context) {
@@ -264,7 +339,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                               onChanged: (bool? selected) {
                                 setState(() {
                                   if (selected == true) {
-                                    selectedTemp.remove('不限'); // 確保不限被移除
+                                    selectedTemp.remove('不限'); 
                                     selectedTemp.add(type);
                                   } else {
                                     selectedTemp.remove(type);
@@ -292,20 +367,248 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       });
     }
   }
+  
+  
+
+  void _rentalBottomSheet(BuildContext context) {
+    TextEditingController minController = TextEditingController();
+    TextEditingController maxController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: Center(
+                      child: Text(
+                        '租金範圍',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  ...rentalRange.map((range) {
+                    return ListTile(
+                      title: Text(range),
+                      onTap: () {
+                        Navigator.pop(context, range);
+                      },
+                    );
+                  }).toList(),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: minController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                            decoration: InputDecoration(
+                              labelText: '最低金額',
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text('－'),
+                        ),
+                        Expanded(
+                          child: TextField(
+                            controller: maxController,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
+                            decoration: InputDecoration(
+                              labelText: '最高金額',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      String min = minController.text;
+                      String max = maxController.text;
+                      if (min.isEmpty && max.isNotEmpty) {
+                        String customRange = '$max元以下';
+                        Navigator.pop(context, customRange);
+                      } else if (min.isNotEmpty && max.isEmpty) {
+                        String customRange = '$min元以上';
+                        Navigator.pop(context, customRange);
+                      } else if (min.isNotEmpty && max.isNotEmpty) {
+                        int minVal = int.parse(min);
+                        int maxVal = int.parse(max);
+                        if (minVal >= maxVal) {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text('輸入錯誤'),
+                                content: Text('最高金額必須大於最低金額'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('確認'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        } else {
+                          String customRange = '$min－$max元';
+                          Navigator.pop(context, customRange);
+                        }
+                      }
+                    },
+                    child: Text('確認'),
+                  ),
+                  SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ).then((selectedRange) {
+      if (selectedRange != null) {
+        setState(() {
+          _selectedRentalRange = selectedRange;
+        });
+      }
+    });
+    
+    
+  }
+  void _selectRoomCount() async {
+    String? selectedRoomCount = await showModalBottomSheet<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return ListView(
+          children: roomcount
+              .map((roomcount) => ListTile(
+                    title: Text(roomcount),
+                    onTap: () => Navigator.pop(context, roomcount),
+                  ))
+              .toList(),
+        );
+      },
+    );
+
+    if (selectedRoomCount != null) {
+      setState(() {
+        _selectedRoomCount = selectedRoomCount;
+      });
+    }
+
+    
+  }
+  void _selectHouseSize() async {
+    String? selectedHouseSize = await showModalBottomSheet<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return ListView(
+          children: housesize
+              .map((housesize) => ListTile(
+                    title: Text(housesize),
+                    onTap: () => Navigator.pop(context, housesize),
+                  ))
+              .toList(),
+        );
+      },
+    );
+
+    if (selectedHouseSize != null) {
+      setState(() {
+        _selectedHouseSize = selectedHouseSize;
+      });
+    }
+    
+  }void _selectTypes() async {
+    List<String>? selectedTypes = await showModalBottomSheet<List<String>>(
+      context: context,
+      builder: (BuildContext context) {
+        final selectedTemp = List<String>.from(_selectedTypes);
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            return Column(
+              children: [
+                CheckboxListTile(
+                  title: Text('不限'),
+                  value: selectedTemp.isEmpty,
+                  onChanged: (bool? selected) {
+                    setState(() {
+                      if (selected == true) {
+                        selectedTemp.clear();
+                      }
+                    });
+                  },
+                ),
+                Expanded(
+                  child: ListView(
+                    children: houseTypes
+                        .map((types) => CheckboxListTile(
+                              title: Text(types),
+                              value: selectedTemp.contains(types) && selectedTemp.isNotEmpty,
+                              onChanged: (bool? selected) {
+                                setState(() {
+                                  if (selected == true) {
+                                    selectedTemp.remove('不限'); 
+                                    selectedTemp.add(types);
+                                  } else {
+                                    selectedTemp.remove(types);
+                                  }
+                                });
+                              },
+                            ))
+                        .toList(),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, selectedTemp),
+                  child: Text('確認'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (selectedTypes != null) {
+      setState(() {
+        _selectedTypes = selectedTypes;
+      });
+    }
+  }
+  
+  
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('新增訂閱條件'),
+        backgroundColor: Color(0xFFECD8C9),
+        title: Text('新增訂閱條件',style: TextStyle(fontWeight: FontWeight.bold),),
+        centerTitle: true,
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
             ListTile(
-              title: Text('縣市：$_selectedCity'),
-              trailing: Icon(Icons.arrow_drop_down),
+              title: Text('縣市：$_selectedCity',),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectCity,
             ),
             ListTile(
@@ -318,16 +621,41 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               trailing: Icon(Icons.arrow_drop_down),
               onTap: _selecttype,
             ),
+            ListTile(
+              title: Text('租金範圍：$_selectedRentalRange'),
+              trailing: Icon(Icons.arrow_drop_down),
+              onTap: () => _rentalBottomSheet(context),
+            ),
+            ListTile(
+              title: Text('格局：$_selectedRoomCount'),
+              trailing: Icon(Icons.arrow_drop_down),
+              onTap: _selectRoomCount,
+            ),
+            ListTile(
+              title: Text('坪數：$_selectedHouseSize'),
+              trailing: Icon(Icons.arrow_drop_down),
+              onTap: _selectHouseSize,
+            ),
+            ListTile(
+              title: Text('房屋型態：${_selectedTypes.isEmpty ? '不限' : _selectedTypes.join(', ')}'),
+              trailing: Icon(Icons.arrow_drop_down),
+              onTap: _selectTypes,
+            ),
             ElevatedButton(
               onPressed: () {
-                widget.onSubmit({
+                Map<String, dynamic> subscriptionData = {
                   'city': _selectedCity,
                   'areas': _selectedAreas,
-                  'type' : _selectedtype
-                });
-                Navigator.of(context).pop();
+                  'type': _selectedtype,
+                  'rentalrange': _selectedRentalRange,
+                  'roomcount': _selectedRoomCount,
+                  'size': _selectedHouseSize,
+                  'types': _selectedTypes,
+                };
+                widget.onSubmit(subscriptionData);
+                Navigator.pop(context);
               },
-              child: Text('確認'),
+              child: Text('確認送出'),
             ),
           ],
         ),

@@ -125,7 +125,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
-                    hintText: ('請輸入姓名'),
+                    hintText: ('請輸入中文姓名'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none
                   ),
@@ -216,7 +216,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   controller: passwordController,
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
-                    hintText: ('請輸入密碼'),
+                    hintText: ('請輸入16碼以內的英數字'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none,
                     suffixIcon: IconButton(
@@ -242,9 +242,9 @@ class _RegisterPageState extends State<RegisterPage> {
                 padding: EdgeInsets.only(left: 10),
                 child: TextField(
                   controller: confirmPasswordController,
-                  obscureText: true,
+                  obscureText: !_isConfirmPasswordVisible,
                   decoration: InputDecoration(
-                    hintText: ('請輸入密碼'),
+                    hintText: ('請輸入16碼以內的英數字'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none,
                     suffixIcon: IconButton(
