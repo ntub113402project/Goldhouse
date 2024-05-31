@@ -1,18 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
 class SubscriptionPage extends StatefulWidget {
   @override
-  _SubscriptionPageState createState() => _SubscriptionPageState();
+  State<SubscriptionPage> createState() => _SubscriptionPageState();
 }
 
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<Map<String, dynamic>> subscriptions = [];
   List<Map<String, String>> properties = [
-    {'title':'某套房','city': '台北市', 'area': '信義區', 'type': '獨立套房','price': '20000', 'size': '10坪', 'roomcount':'1房'},
-    {'title':'某雅房','city': '台北市', 'area': '大安區', 'type': '整層住家','price': '25000', 'size': '10坪', 'roomcount':'1房'},
-    {'title':'某分租','city': '新北市', 'area': '板橋區', 'type': '獨立套房','price': '15000', 'size': '10坪', 'roomcount':'1房'},
+    {
+      'title': '某套房',
+      'city': '台北市',
+      'area': '信義區',
+      'type': '獨立套房',
+      'price': '20000',
+      'size': '10坪',
+      'roomcount': '1房'
+    },
+    {
+      'title': '某雅房',
+      'city': '台北市',
+      'area': '大安區',
+      'type': '整層住家',
+      'price': '25000',
+      'size': '10坪',
+      'roomcount': '1房'
+    },
+    {
+      'title': '某分租',
+      'city': '新北市',
+      'area': '板橋區',
+      'type': '獨立套房',
+      'price': '15000',
+      'size': '10坪',
+      'roomcount': '1房'
+    },
   ];
 
   void _addSubscription(Map<String, dynamic> subscription) {
@@ -27,13 +50,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     });
   }
 
-  List<Map<String, String>> _getMatchingProperties(Map<String, dynamic> subscription) {
+  List<Map<String, String>> _getMatchingProperties(
+      Map<String, dynamic> subscription) {
     return properties
         .where((property) =>
             property['city'] == subscription['city'] &&
-            (subscription['areas'].isEmpty || subscription['areas'].contains(property['area']))&&
-            (subscription['type'].isEmpty || subscription['type'].contains(property['type']))
-            )
+            (subscription['areas'].isEmpty ||
+                subscription['areas'].contains(property['area'])) &&
+            (subscription['type'].isEmpty ||
+                subscription['type'].contains(property['type'])))
         .toList();
   }
 
@@ -41,156 +66,196 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFFECD8C9),
-        title: Image.asset("assets/logo_words.png",fit: BoxFit.contain,height: 70,),
+        backgroundColor: const Color(0xFFECD8C9),
+        title: Image.asset(
+          "assets/logo_words.png",
+          fit: BoxFit.contain,
+          height: 70,
+        ),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          SizedBox(height: 10,),
+          const SizedBox(
+            height: 10,
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Color(0xFF613F26)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF613F26)),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => AddSubscriptionPage(onSubmit: _addSubscription),
+                  builder: (context) =>
+                      AddSubscriptionPage(onSubmit: _addSubscription),
                 ),
               );
             },
-            child: Text('新增訂閱條件',style: TextStyle(color: const Color.fromARGB(255, 245, 245, 245)),),
+            child: const Text(
+              '新增訂閱條件',
+              style: TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
+            ),
           ),
-          SizedBox(height: 10,),
+          const SizedBox(
+            height: 10,
+          ),
           Expanded(
-            child: ListView.builder(
-              itemCount: subscriptions.length,
-              itemBuilder: (context, index) {
-                final subscription = subscriptions[index];
-                final matchingProps = _getMatchingProperties(subscription);
-
-                return ExpansionTile(
-                  title: Text('${subscription['city']} ${subscription['areas'].isEmpty ? '' :subscription['areas'].join(', ')}',
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
+            child: subscriptions.isEmpty
+                ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.notification_add,size: 100,color: Color.fromARGB(255, 181, 181, 181),),
+                      SizedBox(height: 10,),
+                      Text('尚未有訂閱條件',style: TextStyle(fontSize: 20,color: Color.fromARGB(255, 181, 181, 181),),)
+                    ],
                   ),
-                  subtitle: Text('類型:${subscription['type'].isEmpty ? '' : subscription['type'].join(', ')} ${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']} 格局:${subscription['roomcount']} 坪數:${subscription['size']} ${subscription['types'].isEmpty ? '' : subscription['types'].join(', ')}' ,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 2,
+                )
+                : ListView.builder(
+                    itemCount: subscriptions.length,
+                    itemBuilder: (context, index) {
+                      final subscription = subscriptions[index];
+                      final matchingProps =
+                          _getMatchingProperties(subscription);
 
-                  ),
-
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () {
-                      _removeSubscription(index);
+                      return ExpansionTile(
+                        title: Text(
+                          '${subscription['city']} ${subscription['areas'].isEmpty ? '' : subscription['areas'].join(', ')}',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        subtitle: Text(
+                          '類型:${subscription['type'].isEmpty ? '' : subscription['type'].join(', ')} ${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']} 格局:${subscription['roomcount']} 坪數:${subscription['size']} ${subscription['types'].isEmpty ? '' : subscription['types'].join(', ')}',
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 2,
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () {
+                            _removeSubscription(index);
+                          },
+                        ),
+                        children: matchingProps
+                            .map((property) => GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context, '/housedetail');
+                                },
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 130,
+                                  margin: const EdgeInsets.only(
+                                      left: 20, right: 20, top: 10, bottom: 10),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.5),
+                                        spreadRadius: 1,
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                          context, '/housedetail');
+                                    },
+                                    child: Stack(
+                                      children: [
+                                        Card(
+                                          elevation: 0,
+                                          margin: EdgeInsets.zero,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.start,
+                                            children: [
+                                              const ClipRRect(
+                                                borderRadius: BorderRadius.only(
+                                                  topLeft: Radius.circular(8),
+                                                  bottomLeft:
+                                                      Radius.circular(8),
+                                                ),
+                                                // child: Image.network(
+                                                //   houses[index].imageUrl,
+                                                //   fit: BoxFit.cover,
+                                                //   width: MediaQuery.of(context).size.width * 0.35,
+                                                //   height: double.infinity,
+                                                // ),
+                                              ),
+                                              Expanded(
+                                                child: Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        '${property['type']} | ${property['title']}',
+                                                        style: const TextStyle(
+                                                          fontSize: 15,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                        maxLines: 2,
+                                                        overflow:
+                                                            TextOverflow.clip,
+                                                      ),
+                                                      const SizedBox(height: 2),
+                                                      Text(
+                                                        '${property['size']} ${property['city']}${property['area']}',
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                        ),
+                                                        maxLines: 1,
+                                                        overflow:
+                                                            TextOverflow.clip,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        Positioned(
+                                          bottom: 6,
+                                          right: 8,
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                '${property['price']}',
+                                                style: const TextStyle(
+                                                  color: Color.fromARGB(
+                                                      255, 249, 58, 58),
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const Text(
+                                                ' 元/月',
+                                                style: TextStyle(
+                                                    color: Color.fromARGB(
+                                                        255, 249, 58, 58),
+                                                    fontSize: 13),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )))
+                            .toList(),
+                      );
                     },
                   ),
-                  children: matchingProps
-    .map((property) => GestureDetector(
-        onTap: () { Navigator.pushNamed(context, '/housedetail'); },
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          height: 130,
-          margin: EdgeInsets.only(left: 20,right: 20,top: 10,bottom: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.5),
-                spreadRadius: 1,
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: GestureDetector(
-            onTap: () {Navigator.pushNamed(context, '/housedetail');},
-            child: Stack(
-              children: [
-                Card(
-                  elevation: 0,
-                  margin: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(8),
-                          bottomLeft: Radius.circular(8),
-                        ),
-                        // child: Image.network(
-                        //   houses[index].imageUrl,
-                        //   fit: BoxFit.cover,
-                        //   width: MediaQuery.of(context).size.width * 0.35,
-                        //   height: double.infinity,
-                        // ),
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${property['type']} | ${property['title']}',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.clip,
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                '${property['size']} ${property['city']}${property['area']}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.clip,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Positioned(
-                  bottom: 6,
-                  right: 8,
-                  child: Row(
-                    children: [
-                      Text(
-                        '${property['price']}',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 249, 58, 58),
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        ' 元/月',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 249, 58, 58),
-                          fontSize: 13
-                        ),
-                      ), 
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),  
-        )
-      ))
-    .toList(), 
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -201,33 +266,47 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 class AddSubscriptionPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
 
-  AddSubscriptionPage({required this.onSubmit});
+  AddSubscriptionPage({super.key, required this.onSubmit});
 
   @override
-  _AddSubscriptionPageState createState() => _AddSubscriptionPageState();
+  State<AddSubscriptionPage> createState() => _AddSubscriptionPageState();
 }
 
 class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
   String _selectedCity = '台北市';
   List<String> _selectedAreas = [];
-  List<String> availableCities = ['台北市', '新北市', '台中市'];
-  Map<String, List<String>> areasByCity = {
+  List<String> cities = ['台北市', '新北市', '台中市'];
+  Map<String, List<String>> cityDistricts = {
     '台北市': ['信義區', '大安區', '中山區'],
     '新北市': ['板橋區', '新店區', '中和區'],
     '台中市': ['北屯區', '西屯區', '南屯區'],
   };
   List<String> _selectedtype = [];
-  List<String> housetype = ['整層住家','獨立套房','分租套房','雅房'];
+  List<String> housetype = ['整層住家', '獨立套房', '分租套房', '雅房'];
   String _selectedRentalRange = '不限';
   List<String> rentalRange = [
-    '不限', '0－5,000元', '5,000－10,000元', '10,000－15,000元', '15,000－20,000元',
-    '20,000－30,000元', '30,000－40,000元', '40,000元以上'
+    '不限',
+    '0－5,000元',
+    '5,000－10,000元',
+    '10,000－15,000元',
+    '15,000－20,000元',
+    '20,000－30,000元',
+    '30,000－40,000元',
+    '40,000元以上'
   ];
-  List<String> roomcount = ['不限','1房', '2房', '3房', '4房以上'];
+  List<String> roomcount = ['不限', '1房', '2房', '3房', '4房以上'];
   String _selectedRoomCount = '不限';
-  List<String> housesize = ['不限','10坪以下', '10－20坪', '20－30坪', '30－40坪','40－50坪','50坪以上'];
+  List<String> housesize = [
+    '不限',
+    '10坪以下',
+    '10－20坪',
+    '20－30坪',
+    '30－40坪',
+    '40－50坪',
+    '50坪以上'
+  ];
   String _selectedHouseSize = '不限';
-  List<String> houseTypes = ['別墅', '公寓', '電梯大樓','透天厝'];
+  List<String> houseTypes = ['別墅', '公寓', '電梯大樓', '透天厝'];
   List<String> _selectedTypes = [];
 
   void _selectCity() async {
@@ -235,7 +314,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       context: context,
       builder: (BuildContext context) {
         return ListView(
-          children: availableCities
+          children: cities
               .map((city) => ListTile(
                     title: Text(city),
                     onTap: () => Navigator.pop(context, city),
@@ -263,7 +342,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
             return Column(
               children: [
                 CheckboxListTile(
-                  title: Text('不限'),
+                  title: const Text('不限'),
                   value: selectedTemp.isEmpty,
                   onChanged: (bool? selected) {
                     setState(() {
@@ -275,7 +354,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                 ),
                 Expanded(
                   child: ListView(
-                    children: areasByCity[_selectedCity]!
+                    children: cityDistricts[_selectedCity]!
                         .map((area) => CheckboxListTile(
                               title: Text(area),
                               value: selectedTemp.contains(area),
@@ -294,7 +373,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, selectedTemp),
-                  child: Text('確認'),
+                  child: const Text('確認'),
                 ),
               ],
             );
@@ -320,7 +399,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
             return Column(
               children: [
                 CheckboxListTile(
-                  title: Text('不限'),
+                  title: const Text('不限'),
                   value: selectedTemp.isEmpty,
                   onChanged: (bool? selected) {
                     setState(() {
@@ -335,11 +414,12 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                     children: housetype
                         .map((type) => CheckboxListTile(
                               title: Text(type),
-                              value: selectedTemp.contains(type) && selectedTemp.isNotEmpty,
+                              value: selectedTemp.contains(type) &&
+                                  selectedTemp.isNotEmpty,
                               onChanged: (bool? selected) {
                                 setState(() {
                                   if (selected == true) {
-                                    selectedTemp.remove('不限'); 
+                                    selectedTemp.remove('不限');
                                     selectedTemp.add(type);
                                   } else {
                                     selectedTemp.remove(type);
@@ -352,7 +432,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, selectedTemp),
-                  child: Text('確認'),
+                  child: const Text('確認'),
                 ),
               ],
             );
@@ -367,8 +447,6 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       });
     }
   }
-  
-  
 
   void _rentalBottomSheet(BuildContext context) {
     TextEditingController minController = TextEditingController();
@@ -387,11 +465,12 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ListTile(
+                  const ListTile(
                     title: Center(
                       child: Text(
                         '租金範圍',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                     ),
                   ),
@@ -402,7 +481,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                         Navigator.pop(context, range);
                       },
                     );
-                  }).toList(),
+                  }),
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Row(
@@ -411,22 +490,26 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                           child: TextField(
                             controller: minController,
                             keyboardType: TextInputType.number,
-                            inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-                            decoration: InputDecoration(
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            decoration: const InputDecoration(
                               labelText: '最低金額',
                             ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8.0),
                           child: Text('－'),
                         ),
                         Expanded(
                           child: TextField(
                             controller: maxController,
                             keyboardType: TextInputType.number,
-                            inputFormatters: <TextInputFormatter>[FilteringTextInputFormatter.digitsOnly],
-                            decoration: InputDecoration(
+                            inputFormatters: <TextInputFormatter>[
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            decoration: const InputDecoration(
                               labelText: '最高金額',
                             ),
                           ),
@@ -452,14 +535,14 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                             context: context,
                             builder: (BuildContext context) {
                               return AlertDialog(
-                                title: Text('輸入錯誤'),
-                                content: Text('最高金額必須大於最低金額'),
+                                title: const Text('輸入錯誤'),
+                                content: const Text('最高金額必須大於最低金額'),
                                 actions: [
                                   TextButton(
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
-                                    child: Text('確認'),
+                                    child: const Text('確認'),
                                   ),
                                 ],
                               );
@@ -471,9 +554,9 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                         }
                       }
                     },
-                    child: Text('確認'),
+                    child: const Text('確認'),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
@@ -487,9 +570,8 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
         });
       }
     });
-    
-    
   }
+
   void _selectRoomCount() async {
     String? selectedRoomCount = await showModalBottomSheet<String>(
       context: context,
@@ -510,9 +592,8 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
         _selectedRoomCount = selectedRoomCount;
       });
     }
-
-    
   }
+
   void _selectHouseSize() async {
     String? selectedHouseSize = await showModalBottomSheet<String>(
       context: context,
@@ -533,8 +614,9 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
         _selectedHouseSize = selectedHouseSize;
       });
     }
-    
-  }void _selectTypes() async {
+  }
+
+  void _selectTypes() async {
     List<String>? selectedTypes = await showModalBottomSheet<List<String>>(
       context: context,
       builder: (BuildContext context) {
@@ -544,7 +626,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
             return Column(
               children: [
                 CheckboxListTile(
-                  title: Text('不限'),
+                  title: const Text('不限'),
                   value: selectedTemp.isEmpty,
                   onChanged: (bool? selected) {
                     setState(() {
@@ -559,11 +641,12 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                     children: houseTypes
                         .map((types) => CheckboxListTile(
                               title: Text(types),
-                              value: selectedTemp.contains(types) && selectedTemp.isNotEmpty,
+                              value: selectedTemp.contains(types) &&
+                                  selectedTemp.isNotEmpty,
                               onChanged: (bool? selected) {
                                 setState(() {
                                   if (selected == true) {
-                                    selectedTemp.remove('不限'); 
+                                    selectedTemp.remove('不限');
                                     selectedTemp.add(types);
                                   } else {
                                     selectedTemp.remove(types);
@@ -576,7 +659,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                 ),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, selectedTemp),
-                  child: Text('確認'),
+                  child: const Text('確認'),
                 ),
               ],
             );
@@ -591,54 +674,60 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       });
     }
   }
-  
-  
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFFECD8C9),
-        title: Text('新增訂閱條件',style: TextStyle(fontWeight: FontWeight.bold),),
+        backgroundColor: const Color(0xFFECD8C9),
+        title: const Text(
+          '新增訂閱條件',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             ListTile(
-              title: Text('縣市：$_selectedCity',),
+              title: Text(
+                '縣市：$_selectedCity',
+              ),
               trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectCity,
             ),
             ListTile(
-              title: Text('地區：${_selectedAreas.isEmpty ? '不限' : _selectedAreas.join(', ')}'),
-              trailing: Icon(Icons.arrow_drop_down),
+              title: Text(
+                  '地區：${_selectedAreas.isEmpty ? '不限' : _selectedAreas.join(', ')}'),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectAreas,
             ),
             ListTile(
-              title: Text('房屋類型：${_selectedtype.isEmpty ? '不限' : _selectedtype.join(', ')}'),
-              trailing: Icon(Icons.arrow_drop_down),
+              title: Text(
+                  '房屋類型：${_selectedtype.isEmpty ? '不限' : _selectedtype.join(', ')}'),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selecttype,
             ),
             ListTile(
               title: Text('租金範圍：$_selectedRentalRange'),
-              trailing: Icon(Icons.arrow_drop_down),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: () => _rentalBottomSheet(context),
             ),
             ListTile(
               title: Text('格局：$_selectedRoomCount'),
-              trailing: Icon(Icons.arrow_drop_down),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectRoomCount,
             ),
             ListTile(
               title: Text('坪數：$_selectedHouseSize'),
-              trailing: Icon(Icons.arrow_drop_down),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectHouseSize,
             ),
             ListTile(
-              title: Text('房屋型態：${_selectedTypes.isEmpty ? '不限' : _selectedTypes.join(', ')}'),
-              trailing: Icon(Icons.arrow_drop_down),
+              title: Text(
+                  '房屋型態：${_selectedTypes.isEmpty ? '不限' : _selectedTypes.join(', ')}'),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectTypes,
             ),
             ElevatedButton(
@@ -655,7 +744,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                 widget.onSubmit(subscriptionData);
                 Navigator.pop(context);
               },
-              child: Text('確認送出'),
+              child: const Text('確認送出'),
             ),
           ],
         ),

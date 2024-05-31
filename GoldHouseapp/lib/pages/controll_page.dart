@@ -7,8 +7,9 @@ import 'subscription_page.dart';
 
 
 class ControllPage extends StatefulWidget {
+  
   @override
-  _ControllPageState createState() => _ControllPageState();
+  State<ControllPage> createState() => _ControllPageState();
 }
 
 class _ControllPageState extends State<ControllPage>{
@@ -26,14 +27,14 @@ class _ControllPageState extends State<ControllPage>{
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: PageStorage(
-        child: currentScreen,
+      body: PageStorage(        
         bucket: bucket,
+        child: currentScreen,
       ),
       floatingActionButton: Container(
         width: 65,
         height: 65,
-        margin: EdgeInsets.only(top: 10), 
+        margin: const EdgeInsets.only(top: 10), 
         child: FloatingActionButton(
           
           backgroundColor: Colors.white,
@@ -43,7 +44,7 @@ class _ControllPageState extends State<ControllPage>{
               currentScreen = HomePage();
             });
           },
-          shape: RoundedRectangleBorder(
+          shape: const RoundedRectangleBorder(
             side: BorderSide(width: 3,color: Color(0xFFECD8C9),),
             borderRadius: BorderRadius.all(Radius.circular(35)),  
           ),
@@ -52,9 +53,9 @@ class _ControllPageState extends State<ControllPage>{
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
-        color: Color.fromARGB(115, 219, 219, 219),
+        color: const Color.fromARGB(115, 219, 219, 219),
         elevation: 0, 
-        shape: CircularNotchedRectangle(),
+        shape: const CircularNotchedRectangle(),
         notchMargin: 10,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -69,7 +70,7 @@ class _ControllPageState extends State<ControllPage>{
               index: 2,
               label: '刊登',
             ),
-            SizedBox(width: 80),  
+            const SizedBox(width: 80),  
             _buildTabItem(
               icon: Icons.notifications,
               index: 3,
@@ -99,6 +100,8 @@ class _ControllPageState extends State<ControllPage>{
           currentTab = index;
         });
       },
+      splashColor: const Color.fromRGBO(0, 0, 0, 0),
+      highlightColor: Colors.transparent,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -106,19 +109,17 @@ class _ControllPageState extends State<ControllPage>{
           Icon(
             icon,
             size: 28,  
-            color: currentTab == index ? Color.fromARGB(255, 8, 0, 0) : Color.fromARGB(255, 28, 3, 3),
+            color: currentTab == index ? const Color.fromARGB(255, 8, 0, 0) : const Color.fromARGB(255, 28, 3, 3),
           ),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,  
-              color: currentTab == index ? Color(0xFF613F26) : Colors.grey,
+              color: currentTab == index ? const Color(0xFF613F26) : Colors.grey,
             ),
           )
         ],       
       ),
-      splashColor: const Color.fromRGBO(0, 0, 0, 0),
-      highlightColor: Colors.transparent,
     );
   }
 }

@@ -1,37 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'class.dart';
+import 'housedetail_page.dart';
 
-class HomePage extends StatefulWidget{
+class HomePage extends StatefulWidget {
   @override
-  _HomePageState createState() => _HomePageState();
+  State<HomePage> createState() => _HomePageState();
 }
+
 List imageList = [
-    {"id": 1, "image_path": 'assets/note1.jpg'},
-    {"id": 2, "image_path": 'assets/note1.jpg'},
-    {"id": 3, "image_path": 'assets/note1.jpg'}
-  ];
+  {"id": 1, "image_path": 'assets/note1.jpg'},
+  {"id": 2, "image_path": 'assets/note1.jpg'},
+  {"id": 3, "image_path": 'assets/note1.jpg'}
+];
 final CarouselController carouselController = CarouselController();
 
-class _HomePageState extends State<HomePage>{
-  
+class _HomePageState extends State<HomePage> {
   int currentIndex = 0;
   @override
-  Widget build(BuildContext context) {    
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-      backgroundColor: Color(0xFFECD8C9),
-      title: Image.asset("assets/logo_words.png",
-      fit: BoxFit.contain,
-      height: 60,
-      ),
-      centerTitle: true,  
-  ),
-      body: ListView(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFECD8C9),
+          title: Image.asset(
+            "assets/logo_words.png",
+            fit: BoxFit.contain,
+            height: 60,
+          ),
+          centerTitle: true,
+        ),
+        body: ListView(
           children: [
             Stack(
               children: [
-                InkWell(onTap: () {currentIndex;},
+                InkWell(
+                  onTap: () {
+                    currentIndex;
+                  },
                   child: CarouselSlider(
                     items: imageList
                         .map(
@@ -48,7 +53,7 @@ class _HomePageState extends State<HomePage>{
                       autoPlay: true,
                       enlargeCenterPage: false,
                       aspectRatio: 1.5,
-                      viewportFraction: 1, 
+                      viewportFraction: 1,
                       onPageChanged: (index, reason) {
                         setState(() {
                           currentIndex = index;
@@ -65,7 +70,8 @@ class _HomePageState extends State<HomePage>{
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: imageList.asMap().entries.map((entry) {
                       return GestureDetector(
-                        onTap: () => carouselController.animateToPage(entry.key),
+                        onTap: () =>
+                            carouselController.animateToPage(entry.key),
                         child: Container(
                           width: currentIndex == entry.key ? 19 : 7,
                           height: 7,
@@ -84,15 +90,15 @@ class _HomePageState extends State<HomePage>{
                 ),
               ],
             ),
-            SizedBox(height: 20,),
+            const SizedBox(
+              height: 20,
+            ),
             HouseList(),
-            SizedBox(height: 20,),
-            Card(
-              
-            )
+            const SizedBox(
+              height: 20,
+            ),
           ],
-        )
-    );
+        ));
   }
 }
 
@@ -104,7 +110,8 @@ class HouseList extends StatelessWidget {
         return Container(
           width: MediaQuery.of(context).size.width,
           height: 130,
-          margin: EdgeInsets.only(left: 20,right: 20,top: 10,bottom: 10),
+          margin:
+              const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             color: Colors.white,
@@ -113,12 +120,20 @@ class HouseList extends StatelessWidget {
                 color: Colors.grey.withOpacity(0.5),
                 spreadRadius: 1,
                 blurRadius: 4,
-                offset: Offset(0, 2),
+                offset: const Offset(0, 2),
               ),
             ],
           ),
           child: GestureDetector(
-            onTap: () {Navigator.pushNamed(context, '/housedetail');},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => HouseDetailPage(
+                          id: houses[index].id,
+                        )), 
+              );
+            },
             child: Stack(
               children: [
                 Card(
@@ -131,12 +146,12 @@ class HouseList extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(8),
                           bottomLeft: Radius.circular(8),
                         ),
                         child: Image.network(
-                          houses[index].imageUrl,
+                          houses[index].imageUrl[0],
                           fit: BoxFit.cover,
                           width: MediaQuery.of(context).size.width * 0.35,
                           height: double.infinity,
@@ -144,23 +159,23 @@ class HouseList extends StatelessWidget {
                       ),
                       Expanded(
                         child: Padding(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 '${houses[index].type} | ${houses[index].name}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.clip,
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
                                 '${houses[index].size}坪 ${houses[index].city}${houses[index].district}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 14,
                                 ),
                                 maxLines: 1,
@@ -180,25 +195,24 @@ class HouseList extends StatelessWidget {
                     children: [
                       Text(
                         '${houses[index].price}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Color.fromARGB(255, 249, 58, 58),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
+                      const Text(
                         ' 元/月',
                         style: TextStyle(
-                          color: Color.fromARGB(255, 249, 58, 58),
-                          fontSize: 13
-                        ),
-                      ), 
+                            color: Color.fromARGB(255, 249, 58, 58),
+                            fontSize: 13),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-          ),  
+          ),
         );
       }),
     );

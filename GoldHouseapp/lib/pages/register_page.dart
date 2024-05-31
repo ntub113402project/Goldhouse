@@ -5,7 +5,7 @@ import 'dart:convert';
 class RegisterPage extends StatefulWidget {
   
   @override
-  _RegisterPageState createState() => _RegisterPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
   
@@ -74,7 +74,7 @@ class _RegisterPageState extends State<RegisterPage> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('註冊失敗'),
+            title: const Text('註冊失敗'),
             content: Text(errorMessage),
             actions: <Widget>[
               TextButton(
@@ -99,7 +99,7 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFFC5AE9D),
+        backgroundColor: const Color(0xFFC5AE9D),
         leading: IconButton(
           onPressed: (){Navigator.pop(context);}, 
           icon: const Icon(Icons.arrow_back_rounded,size: 35,)) ,
@@ -110,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
         padding: const EdgeInsets.only(top:10,right: 20,left: 20,),
         child: ListView(
           children: <Widget>[
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(10),
               child: Text('姓名',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
             ),
@@ -121,10 +121,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: const Color(0xFFEFEBE9),
               ),
               child: Padding(
-                padding: EdgeInsets.only(left: 10),
+                padding: const EdgeInsets.only(left: 10),
                 child: TextField(
                   controller: usernameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: ('請輸入中文姓名'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none
@@ -133,7 +133,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 10,),
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(10),
               child: Text('性別',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
             ),
@@ -154,7 +154,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ],
             ),
             const SizedBox(height: 10,),
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(10),
               child: Text('電子郵件',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
             ),
@@ -165,10 +165,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: const Color(0xFFEFEBE9),
               ),
               child: Padding(
-                padding: EdgeInsets.only(left: 10),
+                padding: const EdgeInsets.only(left: 10),
                 child: TextField(
                   controller: emailController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: ('請輸入電子郵件'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none
@@ -177,7 +177,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 10,),
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(10),
               child: Text('手機號碼',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
             ),
@@ -188,10 +188,10 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: const Color(0xFFEFEBE9),
               ),
               child: Padding(
-                padding: EdgeInsets.only(left: 10),
+                padding: const EdgeInsets.only(left: 10),
                 child: TextField(
                   controller: phoneController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: ('請輸入手機號碼'),
                     hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none
@@ -200,7 +200,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 10,),
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(10),
               child: Text('密碼',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
             ),
@@ -211,13 +211,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: const Color(0xFFEFEBE9),
               ),
               child: Padding(
-                padding: EdgeInsets.only(left: 10),
+                padding: const EdgeInsets.only(left: 10),
                 child: TextField(                  
                   controller: passwordController,
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     hintText: ('請輸入16碼以內的英數字'),
-                    hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
+                    hintStyle: const TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none,
                     suffixIcon: IconButton(
                       onPressed: () {setState(() {_isPasswordVisible = !_isPasswordVisible;});}, 
@@ -228,7 +228,7 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ),
             const SizedBox(height: 10,),
-            Padding(
+            const Padding(
               padding: EdgeInsets.all(10),
               child: Text('確認密碼',style: TextStyle(fontSize: 22,color: Color(0xFF613F26)),),
             ),
@@ -239,13 +239,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: const Color(0xFFEFEBE9),
               ),
               child: Padding(
-                padding: EdgeInsets.only(left: 10),
+                padding: const EdgeInsets.only(left: 10),
                 child: TextField(
                   controller: confirmPasswordController,
                   obscureText: !_isConfirmPasswordVisible,
                   decoration: InputDecoration(
                     hintText: ('請輸入16碼以內的英數字'),
-                    hintStyle: TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
+                    hintStyle: const TextStyle( color: Color.fromARGB(255, 128, 111, 111)),
                     border: InputBorder.none,
                     suffixIcon: IconButton(
                       onPressed: () {setState(() {_isConfirmPasswordVisible = !_isConfirmPasswordVisible;});}, 
@@ -266,7 +266,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
             ),
-            SizedBox(height: 20,)
+            const SizedBox(height: 20,)
           ],
         ),
       ) ,

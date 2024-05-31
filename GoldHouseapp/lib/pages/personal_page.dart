@@ -9,13 +9,15 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AccountPage extends StatelessWidget {
+  const AccountPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: _checkLoginStatus(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
+          return const CircularProgressIndicator();
         } else {
           if (snapshot.data == true) {
             return PersonalPage();
@@ -35,13 +37,20 @@ class AccountPage extends StatelessWidget {
 
 class PersonalPage extends StatefulWidget {
   @override
-  _PersonalPageState createState() => _PersonalPageState();
+  State<PersonalPage> createState() => _PersonalPageState();
 }
 
 class _PersonalPageState extends State<PersonalPage> {
   File? _image;
   String? username;
   String? gmail;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadmembers();
+    requestPermissions();
+  }
 
   Future<void> requestPermissions() async {
     await [
@@ -58,13 +67,6 @@ class _PersonalPageState extends State<PersonalPage> {
         _image = File(pickedFile.path);
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadmembers();
-    requestPermissions();
   }
 
   Future<void> _loadmembers() async {
@@ -89,7 +91,7 @@ class _PersonalPageState extends State<PersonalPage> {
     return Scaffold(
         body: ListView(
       children: [
-        Padding(padding: EdgeInsets.only(top: 50)),
+        const Padding(padding: EdgeInsets.only(top: 50)),
         Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,
@@ -97,18 +99,18 @@ class _PersonalPageState extends State<PersonalPage> {
             Container(
               width: MediaQuery.of(context).size.width * 0.8,
               height: 200,
-              margin: EdgeInsets.only(top: 10),
-              padding: EdgeInsets.only(top: 50),
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.only(top: 50),
               decoration: BoxDecoration(
-                color: Color(0xFFECD8C9),
+                color: const Color(0xFFECD8C9),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Color(0xFF613F26), width: 10),
+                border: Border.all(color: const Color(0xFF613F26), width: 10),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     spreadRadius: 5,
                     blurRadius: 7,
-                    offset: Offset(0, 3),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -116,24 +118,25 @@ class _PersonalPageState extends State<PersonalPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Text(username ?? '',
-                      style: TextStyle(
+                      style: const TextStyle(
                           color: Color(0xFF613F26),
                           fontWeight: FontWeight.bold,
                           fontSize: 25)),
-                  SizedBox(
+                  const SizedBox(
                     height: 3,
                   ),
                   Text(gmail ?? '',
-                      style: TextStyle(color: Color(0xFF613F26), fontSize: 16)),
-                  SizedBox(
+                      style: const TextStyle(
+                          color: Color(0xFF613F26), fontSize: 16)),
+                  const SizedBox(
                     height: 5,
                   ),
                   ElevatedButton(
                       onPressed: _logout,
-                      style: ButtonStyle(
+                      style: const ButtonStyle(
                           backgroundColor: MaterialStatePropertyAll(
                               Color.fromARGB(255, 156, 146, 139))),
-                      child: Text(
+                      child: const Text(
                         '登出',
                         style: TextStyle(color: Colors.white, fontSize: 15),
                       ))
@@ -152,16 +155,16 @@ class _PersonalPageState extends State<PersonalPage> {
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
                               ListTile(
-                                leading: Icon(Icons.photo_library),
-                                title: Text('相簿'),
+                                leading: const Icon(Icons.photo_library),
+                                title: const Text('相簿'),
                                 onTap: () {
                                   _pickImage(ImageSource.gallery);
                                   Navigator.of(context).pop();
                                 },
                               ),
                               ListTile(
-                                leading: Icon(Icons.camera_alt),
-                                title: Text('相機'),
+                                leading: const Icon(Icons.camera_alt),
+                                title: const Text('相機'),
                                 onTap: () {
                                   _pickImage(ImageSource.camera);
                                   Navigator.of(context).pop();
@@ -177,8 +180,8 @@ class _PersonalPageState extends State<PersonalPage> {
                     width: 120,
                     height: 120,
                     decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 235, 189, 155),
-                      border: Border.all(color: Color(0xFF613F26), width: 10),
+                      color: const Color.fromARGB(255, 235, 189, 155),
+                      border: Border.all(color: const Color(0xFF613F26), width: 10),
                       borderRadius: BorderRadius.circular(80),
                     ),
                     child: ClipOval(
@@ -191,21 +194,21 @@ class _PersonalPageState extends State<PersonalPage> {
           ],
         ),
         Container(
-          margin: EdgeInsets.only(top: 35, left: 30, right: 30, bottom: 20),
+          margin: const EdgeInsets.only(top: 35, left: 30, right: 30, bottom: 20),
           decoration: BoxDecoration(
-              color: Color.fromARGB(255, 252, 252, 252),
+              color: const Color.fromARGB(255, 252, 252, 252),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: Color.fromARGB(255, 73, 65, 65).withOpacity(0.1),
+                  color: const Color.fromARGB(255, 73, 65, 65).withOpacity(0.1),
                   spreadRadius: 5,
                   blurRadius: 7,
-                  offset: Offset(0, 3),
+                  offset: const Offset(0, 3),
                 ),
               ]),
           child: Column(
             children: [
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
               ListTile(
@@ -216,18 +219,18 @@ class _PersonalPageState extends State<PersonalPage> {
                         builder: (context) => ModifyPersonalPage()),
                   );
                 },
-                leading: Icon(
+                leading: const Icon(
                   Icons.person,
                   size: 30,
                   color: Color(0xFF613F26),
                 ),
-                title: Text(
+                title: const Text(
                   "個人資料",
                   style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                 ),
-                trailing: Icon(Icons.arrow_forward_ios),
+                trailing: const Icon(Icons.arrow_forward_ios),
               ),
-              Divider(
+              const Divider(
                 color: Color(0xFF613F26),
                 height: 20,
               ),
@@ -239,22 +242,22 @@ class _PersonalPageState extends State<PersonalPage> {
                         builder: (context) => ModifyPasswordPage()),
                   );
                 },
-                leading: Icon(
+                leading: const Icon(
                   Icons.lock,
                   size: 30,
                   color: Color(0xFF613F26),
                 ),
-                title: Text(
+                title: const Text(
                   "更改密碼",
                   style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                 ),
-                trailing: Icon(Icons.arrow_forward_ios),
+                trailing: const Icon(Icons.arrow_forward_ios),
               ),
-              Divider(
+              const Divider(
                 color: Color(0xFF613F26),
                 height: 20,
               ),
-              ListTile(
+              const ListTile(
                 leading: Icon(
                   Icons.favorite_rounded,
                   size: 30,
@@ -266,11 +269,11 @@ class _PersonalPageState extends State<PersonalPage> {
                 ),
                 trailing: Icon(Icons.arrow_forward_ios),
               ),
-              Divider(
+              const Divider(
                 color: Color(0xFF613F26),
                 height: 20,
               ),
-              ListTile(
+              const ListTile(
                 leading: Icon(
                   Icons.loyalty,
                   size: 30,
@@ -282,7 +285,7 @@ class _PersonalPageState extends State<PersonalPage> {
                 ),
                 trailing: Icon(Icons.arrow_forward_ios),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
             ],
@@ -294,24 +297,18 @@ class _PersonalPageState extends State<PersonalPage> {
 }
 
 class ModifyPersonalPage extends StatefulWidget {
+   ModifyPersonalPage({super.key});
+
   @override
-  _ModifyPersonalPageState createState() => _ModifyPersonalPageState();
+  State<ModifyPersonalPage> createState() => _ModifyPersonalPageState();
 }
 
 class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
   File? _image;
-  TextEditingController _nameController = TextEditingController();
-  TextEditingController _gmailController = TextEditingController();
-  TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _gmailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   String _gender = '';
-
-  Future<void> requestPermissions() async {
-    await [
-      Permission.camera,
-      Permission.photos,
-      Permission.storage,
-    ].request();
-  }
 
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
@@ -326,7 +323,6 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
   void initState() {
     super.initState();
     _loadUserData();
-    requestPermissions();
   }
 
   Future<void> _loadUserData() async {
@@ -354,8 +350,8 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: Color(0xFFECD8C9),
-          title: Text(
+          backgroundColor: const Color(0xFFECD8C9),
+          title: const Text(
             '個人資料修改',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
           ),
@@ -364,25 +360,25 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
         body: ListView(
           children: [
             Container(
-              margin: EdgeInsets.only(left: 15, right: 15, top: 20),
-              padding: EdgeInsets.only(left: 15, right: 15, top: 20),
+              margin: const EdgeInsets.only(left: 15, right: 15, top: 20),
+              padding: const EdgeInsets.only(left: 15, right: 15, top: 20),
               decoration: BoxDecoration(
-                color: Color(0xFFECD8C9),
+                color: const Color(0xFFECD8C9),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Color(0xFF613F26), width: 10),
+                border: Border.all(color: const Color(0xFF613F26), width: 10),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     spreadRadius: 5,
                     blurRadius: 7,
-                    offset: Offset(0, 3),
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  SizedBox(
+                  const SizedBox(
                     height: 30,
                   ),
                   GestureDetector(
@@ -395,16 +391,16 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
                                 ListTile(
-                                  leading: Icon(Icons.photo_library),
-                                  title: Text('相簿'),
+                                  leading: const Icon(Icons.photo_library),
+                                  title: const Text('相簿'),
                                   onTap: () {
                                     _pickImage(ImageSource.gallery);
                                     Navigator.of(context).pop();
                                   },
                                 ),
                                 ListTile(
-                                  leading: Icon(Icons.camera_alt),
-                                  title: Text('相機'),
+                                  leading: const Icon(Icons.camera_alt),
+                                  title: const Text('相機'),
                                   onTap: () {
                                     _pickImage(ImageSource.camera);
                                     Navigator.of(context).pop();
@@ -420,7 +416,7 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Color(0xFF613F26), width: 10),
+                        border: Border.all(color: const Color(0xFF613F26), width: 10),
                         borderRadius: BorderRadius.circular(80),
                       ),
                       child: ClipOval(
@@ -430,12 +426,12 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                       ),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
                   TextFormField(
                     controller: _nameController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       suffixIcon: Icon(Icons.create_rounded),
                       labelText: '姓名',
                       prefixIcon: Icon(Icons.person),
@@ -457,32 +453,32 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                       setState(() {});
                     },
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Container(
-                      width: MediaQuery.of(context).size.width * 0.82,
-                      padding: EdgeInsets.only(top: 15, bottom: 15, left: 10),
+                      width: double.infinity,
+                      padding: const EdgeInsets.only(top: 15, bottom: 15, left: 10),
                       decoration: BoxDecoration(
                           border: Border.all(
-                              color: Color.fromARGB(255, 33, 26, 26), width: 3),
+                              color: const Color.fromARGB(255, 33, 26, 26), width: 3),
                           borderRadius: BorderRadius.circular(5)),
                       child: Row(
                         children: [
-                          Icon(Icons.transgender_rounded),
-                          SizedBox(
+                          const Icon(Icons.transgender_rounded),
+                          const SizedBox(
                             width: 10,
                           ),
                           Text(
                             '$_gender (不可修改)',
-                            style: TextStyle(
+                            style: const TextStyle(
                                 fontSize: 17,
                                 color: Color.fromARGB(255, 113, 113, 113)),
                           ),
                         ],
                       )),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   TextFormField(
                     controller: _gmailController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       suffixIcon: Icon(Icons.create_rounded),
                       labelText: '電子郵件',
                       prefixIcon: Icon(Icons.mail_rounded),
@@ -504,10 +500,10 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                       setState(() {});
                     },
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   TextFormField(
                     controller: _phoneController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       suffixIcon: Icon(Icons.create_rounded),
                       labelText: '電話號碼',
                       prefixIcon: Icon(Icons.phone_rounded),
@@ -529,18 +525,18 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                       setState(() {});
                     },
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF613F26)),
+                        backgroundColor: const Color(0xFF613F26)),
                     onPressed: () {},
-                    child: Text(
+                    child: const Text(
                       '確認',
                       style: TextStyle(
-                          color: const Color.fromARGB(255, 245, 245, 245)),
+                          color: Color.fromARGB(255, 245, 245, 245)),
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                 ],
               ),
             )
@@ -551,16 +547,16 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
 
 class ModifyPasswordPage extends StatefulWidget {
   @override
-  _ModifyPasswordPageState createState() => _ModifyPasswordPageState();
+  State<ModifyPasswordPage> createState() => _ModifyPasswordPageState();
 }
 
 class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
   bool _isPasswordVisible = false;
   bool _isPasswordVisible1 = false;
   bool _isPasswordVisible2 = false;
-  TextEditingController _oldPasswordController = TextEditingController();
-  TextEditingController _newPasswordController = TextEditingController();
-  TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _oldPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   @override
   void initState() {
@@ -578,14 +574,14 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('錯誤'),
-          content: Text('新密碼與確認密碼不一致'),
+          title: const Text('錯誤'),
+          content: const Text('新密碼與確認密碼不一致'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('確認'),
+              child: const Text('確認'),
             ),
           ],
         ),
@@ -594,26 +590,26 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
     }
 
     var url = Uri.parse('http://4.227.176.245:5000/change_password');
-    var response = await http.post(url, body: json.encode({
-      'gmail': gmail,
-      'old_password': oldPassword,
-      'new_password': newPassword,
-    }), headers: {
-      'Content-Type': 'application/json'
-    });
+    var response = await http.post(url,
+        body: json.encode({
+          'gmail': gmail,
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        }),
+        headers: {'Content-Type': 'application/json'});
 
     if (response.statusCode == 200) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('成功'),
+          title: const Text('成功'),
           content: Text(json.decode(response.body)['message']),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('確認'),
+              child: const Text('確認'),
             ),
           ],
         ),
@@ -622,14 +618,14 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('錯誤'),
+          title: const Text('錯誤'),
           content: Text(json.decode(response.body)['error']),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('確認'),
+              child: const Text('確認'),
             ),
           ],
         ),
@@ -641,8 +637,8 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: Color(0xFFECD8C9),
-          title: Text(
+          backgroundColor: const Color(0xFFECD8C9),
+          title: const Text(
             '更改密碼',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
           ),
@@ -650,18 +646,18 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
         ),
         body: SingleChildScrollView(
           child: Container(
-            margin: EdgeInsets.only(left: 15, right: 15, top: 30),
-            padding: EdgeInsets.only(left: 15, right: 15, top: 40, bottom: 20),
+            margin: const EdgeInsets.only(left: 15, right: 15, top: 30),
+            padding: const EdgeInsets.only(left: 15, right: 15, top: 40, bottom: 20),
             decoration: BoxDecoration(
-              color: Color(0xFFECD8C9),
+              color: const Color(0xFFECD8C9),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Color(0xFF613F26), width: 10),
+              border: Border.all(color: const Color(0xFF613F26), width: 10),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   spreadRadius: 5,
                   blurRadius: 7,
-                  offset: Offset(0, 3),
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -682,15 +678,15 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
                           ? Icons.visibility
                           : Icons.visibility_off),
                     ),
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(
+                    prefixIcon: const Icon(Icons.lock),
+                    border: const OutlineInputBorder(),
+                    focusedBorder: const OutlineInputBorder(
                       borderSide: BorderSide(
                         color: Color(0xFF615AAB),
                         width: 3,
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
+                    enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(
                         color: Color.fromARGB(255, 33, 26, 26),
                         width: 3,
@@ -701,7 +697,7 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
                     setState(() {});
                   },
                 ),
-                SizedBox(
+                const SizedBox(
                   height: 20,
                 ),
                 TextFormField(
@@ -719,15 +715,15 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
                           ? Icons.visibility
                           : Icons.visibility_off),
                     ),
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(
+                    prefixIcon: const Icon(Icons.lock),
+                    border: const OutlineInputBorder(),
+                    focusedBorder: const OutlineInputBorder(
                       borderSide: BorderSide(
                         color: Color(0xFF615AAB),
                         width: 3,
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
+                    enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(
                         color: Color.fromARGB(255, 33, 26, 26),
                         width: 3,
@@ -738,7 +734,7 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
                     setState(() {});
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: !_isPasswordVisible2,
@@ -754,15 +750,15 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
                           ? Icons.visibility
                           : Icons.visibility_off),
                     ),
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(
+                    prefixIcon: const Icon(Icons.lock),
+                    border: const OutlineInputBorder(),
+                    focusedBorder: const OutlineInputBorder(
                       borderSide: BorderSide(
                         color: Color(0xFF615AAB),
                         width: 3,
                       ),
                     ),
-                    enabledBorder: OutlineInputBorder(
+                    enabledBorder: const OutlineInputBorder(
                       borderSide: BorderSide(
                         color: Color.fromARGB(255, 33, 26, 26),
                         width: 3,
@@ -773,15 +769,15 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
                     setState(() {});
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF613F26)),
+                      backgroundColor: const Color(0xFF613F26)),
                   onPressed: changePassword,
-                  child: Text(
+                  child: const Text(
                     '確認',
                     style: TextStyle(
-                        color: const Color.fromARGB(255, 245, 245, 245)),
+                        color: Color.fromARGB(255, 245, 245, 245)),
                   ),
                 ),
               ],

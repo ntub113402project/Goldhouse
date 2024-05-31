@@ -6,14 +6,14 @@ class House {
   final String city;
   final String district;
   final int price;
-  final String imageUrl; 
+  final List<String> imageUrl; 
   
   House({required this.id, required this.type, required this.name, required this.size, required this.city, required this.district, required this.price, required this.imageUrl});
 }
 final List<House> houses = [
     House(
       id: 1,
-      imageUrl: 'https://img1.591.com.tw/house/2024/04/27/171421638417334102.jpg!750x588.water2.jpg', 
+      imageUrl: ['https://img1.591.com.tw/house/2024/04/27/171421638417334102.jpg!750x588.water2.jpg','https://img1.591.com.tw/house/2024/05/24/171652713612887601.jpg!1000x.water2.jpg','https://img2.591.com.tw/house/2024/05/24/171652713608955407.jpg!1000x.water2.jpg'], 
       type: '獨立套房',
       name: '中山站9分獨立門戶',
       size: 8,
@@ -22,18 +22,8 @@ final List<House> houses = [
       price: 20000,   
     ),
     House(
-      id: 1,
-      imageUrl: 'https://img1.591.com.tw/house/2024/04/27/171421638417334102.jpg!750x588.water2.jpg', 
-      type: '獨立套房',
-      name: '中山站9分獨立門戶',
-      size: 8,
-      city: '台北市',
-      district: '中山區',
-      price: 20000,   
-    ),
-    House(
-      id: 1,
-      imageUrl: 'https://img1.591.com.tw/house/2024/04/27/171421638417334102.jpg!750x588.water2.jpg', 
+      id: 2,
+      imageUrl: ['https://img1.591.com.tw/house/2024/04/27/171421638417334102.jpg!750x588.water2.jpg','https://img1.591.com.tw/house/2024/05/24/171652713612887601.jpg!1000x.water2.jpg'], 
       type: '獨立套房',
       name: '中山站9分獨立門戶',
       size: 8,

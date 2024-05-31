@@ -4,7 +4,7 @@ class ForgetpwPage extends StatefulWidget {
   
   @override
   
-  _ForgetpwPageState createState() => _ForgetpwPageState();
+  State<ForgetpwPage> createState() => _ForgetpwPageState();
 }
 
 class _ForgetpwPageState extends State<ForgetpwPage>{
