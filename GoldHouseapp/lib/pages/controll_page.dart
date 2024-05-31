@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'createhouse_page.dart';
 import 'home_page.dart';
 import 'search_page.dart';
 import 'personal_page.dart';
@@ -15,9 +16,9 @@ class _ControllPageState extends State<ControllPage>{
   final List<Widget> screens = [
     HomePage(),
     SearchPage(),
-    HomePage(),
+    CreateHousePage(),
     SubscriptionPage(),
-    PersonalPage(),
+    AccountPage(),
   ];
   final PageStorageBucket bucket = PageStorageBucket();
   Widget currentScreen = HomePage();
