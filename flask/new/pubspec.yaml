@@ -1,4 +1,4 @@
-name: namer_app
+name: flutter_application_1
 description: A new Flutter project.
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -20,6 +20,7 @@ dependencies:
   http: ^1.2.1
   shared_preferences: ^2.2.3
   carousel_slider: ^4.2.1
+  cached_network_image: ^3.2.0
 
 dev_dependencies:
   flutter_test:

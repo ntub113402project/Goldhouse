@@ -1,14 +1,17 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 from base64 import b64encode
 import re
+from flask_cors import CORS
+import os
 
 import sys
 import codecs
 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 
 app = Flask(__name__)
+CORS(app)
 
 #todo function target
 # 縣市(台北市+XX區)
@@ -272,9 +275,6 @@ def search_houses():
         #* image load
         # cursor.execute("SELECT image FROM image WHERE hid = %s", (result[0],)) #image
         # image_list = cursor.fetchall() #image
-
-        #* service load
-        cursor.execute("SELECT device, avaliable FROM ")
         
         data.append({
             # 'image':[b64encode(image[0]).decode('utf-8') for image in image_list], #image
@@ -292,11 +292,63 @@ def search_houses():
             'bus':result[11]
         })
 
-    print(data)
     return jsonify(data), 200
 
 #todo 搜尋目標物件 detail information
+@app.route('/houses/<hid>', methods=['GET'])
+def get_house_details(hid):
+    cursor = mydb.cursor()
+    cursor.execute("USE ghdetail")
+    cursor.execute("SELECT title, address, type, agency, layer, pattern, price, deposit, content, hid FROM new_housedetail WHERE hid=%s", (hid,))
+    results = cursor.fetchone()
 
+    if not results:
+        return jsonify({'error': 'House not found'}), 404
+
+    cursor.execute(f"SELECT device, avaliable FROM service WHERE hid=%s", (hid,))
+    services = cursor.fetchall()
+    services_dict = {service[0]: bool(service[1]) for service in services}
+
+    #* image access
+    PHOTO_DIRECTORY = 'D:/gold_house/jpg'  #! 圖片存取路徑
+    house_photo_directory = os.path.join(PHOTO_DIRECTORY, str(hid))
+    if not os.path.exists(house_photo_directory):
+        return jsonify({'error': 'House photos not found'}), 404
+
+    image_files = [f for f in os.listdir(house_photo_directory) if os.path.isfile(os.path.join(house_photo_directory, f))]
+    image_urls = [f"http://127.0.0.1:5000/houses/{hid}/{img}" for img in image_files]
+    
+
+    data = {
+        'title': results[0],
+        'area': results[1][:3],
+        'houseType': results[2],
+        'ownerType': "屋主" if "屋主" in results[3] else "房仲",
+        'floor': results[4],
+        'pattern': results[5],
+        'includes': 'undefined', # indefined
+        'price': results[6],
+        'deposit': results[7],
+        'rentPeriod': 'undefined', # indefined
+        'moveInDate': 'undefined', # indefined
+        'identity': 'undefined', # indefined
+        'other': 'undefined', # indefined
+        'legalUse': 'undefined',
+        'areaSize': 'undefined',
+        'decoration': 'undefined',
+        'propertyRegistration': 'undefined',
+        'furniture': services_dict,
+        'description': results[8],
+        'imageUrl': image_urls
+    }
+
+    return jsonify(data), 200
+
+#todo 取得單張圖片
+@app.route('/houses/<hid>/<filename>', methods=['GET'])
+def get_photo(hid, filename):
+    PHOTO_DIRECTORY = 'D:/gold_house/jpg'  #! 圖片存取路徑
+    return send_from_directory(os.path.join(PHOTO_DIRECTORY, hid), filename), 200
 
 #todo 更改會員資料
 @app.route('/update_user', methods=['POST'])
