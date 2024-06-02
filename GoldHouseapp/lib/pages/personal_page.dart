@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AccountPage extends StatelessWidget {
-  const AccountPage({super.key});
+   AccountPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class AccountPage extends StatelessWidget {
           if (snapshot.data == true) {
             return PersonalPage();
           } else {
-            return LoginFirstPage();
+            return LoginPage();
           }
         }
       },
@@ -75,6 +75,10 @@ class _PersonalPageState extends State<PersonalPage> {
       username = prefs.getString('username');
       gmail = prefs.getString('gmail');
     });
+  }
+
+  void updateUserData() {
+    _loadmembers();
   }
 
   Future<void> _logout() async {
@@ -181,7 +185,8 @@ class _PersonalPageState extends State<PersonalPage> {
                     height: 120,
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 235, 189, 155),
-                      border: Border.all(color: const Color(0xFF613F26), width: 10),
+                      border:
+                          Border.all(color: const Color(0xFF613F26), width: 10),
                       borderRadius: BorderRadius.circular(80),
                     ),
                     child: ClipOval(
@@ -194,7 +199,8 @@ class _PersonalPageState extends State<PersonalPage> {
           ],
         ),
         Container(
-          margin: const EdgeInsets.only(top: 35, left: 30, right: 30, bottom: 20),
+          margin:
+              const EdgeInsets.only(top: 35, left: 30, right: 30, bottom: 20),
           decoration: BoxDecoration(
               color: const Color.fromARGB(255, 252, 252, 252),
               borderRadius: BorderRadius.circular(10),
@@ -216,7 +222,9 @@ class _PersonalPageState extends State<PersonalPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => ModifyPersonalPage()),
+                      builder: (context) =>
+                          ModifyPersonalPage(onUpdate: updateUserData),
+                    ),
                   );
                 },
                 leading: const Icon(
@@ -297,7 +305,8 @@ class _PersonalPageState extends State<PersonalPage> {
 }
 
 class ModifyPersonalPage extends StatefulWidget {
-   ModifyPersonalPage({super.key});
+  final Function onUpdate;
+  ModifyPersonalPage({super.key, required this.onUpdate});
 
   @override
   State<ModifyPersonalPage> createState() => _ModifyPersonalPageState();
@@ -309,7 +318,7 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
   final TextEditingController _gmailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   String _gender = '';
-
+  int? memberid;
   Future<void> _pickImage(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
     if (pickedFile != null) {
@@ -333,24 +342,64 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
       _phoneController.text = prefs.getString('phone') ?? '';
       int genderCode = int.parse(prefs.getString('gender') ?? '1');
       _gender = (genderCode == 1) ? '男性' : '女性';
+      memberid = prefs.getInt('member_id') ?? 0;
     });
   }
 
-  // Future<void> _saveUserData() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   prefs.setString('username', _nameController.text);
-  //   prefs.setString('gmail', _gmailController.text);
-  //   prefs.setString('phone', _phoneController.text);
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     SnackBar(content: Text('資料已更新')),
-  //   );
-  // }
+  Future<void> _saveUserData() async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://4.227.176.245:5000/update_user'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'member_id': memberid,
+          'username': _nameController.text,
+          'gmail': _gmailController.text,
+          'phone': _phoneController.text,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // 更新成功
+        widget.onUpdate();
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('資料已更新')),
+        );
+        // 更新 SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('username', _nameController.text);
+        await prefs.setString('gmail', _gmailController.text);
+        await prefs.setString('phone', _phoneController.text);
+      } else {
+        // 處理更新失敗
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新失敗')),
+        );
+      }
+    } catch (error) {
+      print('Error: $error');
+      // 無法連線至 Flask API
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('無法連線至伺服器')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFFECD8C9),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+              widget.onUpdate();
+            },
+          ),
           title: const Text(
             '個人資料修改',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 25),
@@ -416,7 +465,8 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFF613F26), width: 10),
+                        border: Border.all(
+                            color: const Color(0xFF613F26), width: 10),
                         borderRadius: BorderRadius.circular(80),
                       ),
                       child: ClipOval(
@@ -456,10 +506,12 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                   const SizedBox(height: 20),
                   Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.only(top: 15, bottom: 15, left: 10),
+                      padding:
+                          const EdgeInsets.only(top: 15, bottom: 15, left: 10),
                       decoration: BoxDecoration(
                           border: Border.all(
-                              color: const Color.fromARGB(255, 33, 26, 26), width: 3),
+                              color: const Color.fromARGB(255, 33, 26, 26),
+                              width: 3),
                           borderRadius: BorderRadius.circular(5)),
                       child: Row(
                         children: [
@@ -529,11 +581,11 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF613F26)),
-                    onPressed: () {},
+                    onPressed: _saveUserData,
                     child: const Text(
                       '確認',
-                      style: TextStyle(
-                          color: Color.fromARGB(255, 245, 245, 245)),
+                      style:
+                          TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -556,7 +608,8 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
   bool _isPasswordVisible2 = false;
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -647,7 +700,8 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
         body: SingleChildScrollView(
           child: Container(
             margin: const EdgeInsets.only(left: 15, right: 15, top: 30),
-            padding: const EdgeInsets.only(left: 15, right: 15, top: 40, bottom: 20),
+            padding:
+                const EdgeInsets.only(left: 15, right: 15, top: 40, bottom: 20),
             decoration: BoxDecoration(
               color: const Color(0xFFECD8C9),
               borderRadius: BorderRadius.circular(20),
@@ -776,8 +830,7 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
                   onPressed: changePassword,
                   child: const Text(
                     '確認',
-                    style: TextStyle(
-                        color: Color.fromARGB(255, 245, 245, 245)),
+                    style: TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
                   ),
                 ),
               ],

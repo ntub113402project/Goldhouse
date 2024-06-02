@@ -69,8 +69,8 @@ class _SearchPageState extends State<SearchPage> {
 class SearchResultPage extends StatelessWidget {
   final List<dynamic> searchResults;
 
-  // SearchResultPage({Key? key, required this.searchResults}) : super(key: key);
   const SearchResultPage({super.key, required this.searchResults});
+  
 
   @override
   Widget build(BuildContext context) {

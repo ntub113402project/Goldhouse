@@ -17,6 +17,7 @@ dependencies:
   permission_handler: ^11.3.1
   http: ^1.2.1
   shared_preferences: ^2.2.3
+  cached_network_image: ^3.2.0
 
 dev_dependencies:
   flutter_test:

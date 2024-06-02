@@ -60,6 +60,7 @@ class _LoginPageState extends State<LoginPage> {
       await prefs.setString('gmail', members['gmail']);
       await prefs.setString('phone', members['phone']);
       await prefs.setString('gender', members['gender']);
+      await prefs.setInt('member_id', members['member_id']);
       await prefs.setBool('isLoggedIn', true);
 
       showDialog(
