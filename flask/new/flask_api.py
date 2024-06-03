@@ -13,6 +13,9 @@ sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 app = Flask(__name__)
 CORS(app)
 
+PHOTO_DIRECTORY = 'D:/gold_house/jpg' #! image access path
+Flask_url = 'http://127.0.0.1:5000' #! Flask api address
+
 #todo function target
 # 縣市(台北市+XX區)
 # 房屋類型(整層住家、獨立套房、分租套房)
@@ -30,8 +33,6 @@ mydb = mysql.connector.connect(
     connection_timeout=600,
     get_warnings=True
 )
-mydb.cmd_query("SET SESSION wait_timeout = 600")  # 设置会话等待超时 (秒)
-mydb.cmd_query("SET SESSION interactive_timeout = 600")  # 设置交互超时 (秒)
 
 cursor = mydb.cursor()
 
@@ -272,24 +273,20 @@ def search_houses():
 
     data = []
     for result in results:
-        #* image load
-        # cursor.execute("SELECT image FROM image WHERE hid = %s", (result[0],)) #image
-        # image_list = cursor.fetchall() #image
-        
+        house_photo_directory = os.path.join(PHOTO_DIRECTORY, result[0])
+        if not os.path.exists(house_photo_directory):
+            image_urls = ""
+        else:
+            image_urls = f"{Flask_url}/houses/{result[0]}/image1.jpg"
+
         data.append({
-            # 'image':[b64encode(image[0]).decode('utf-8') for image in image_list], #image
             'hid':result[0],
-            'url': result[1],
             'title': result[2],
             'pattern':result[3],
             'size':result[4],
-            'layer':result[5],
-            'type':result[6],
             'price':result[7],
-            'deposit':result[8],
             'address':result[9],
-            'subway':result[10],
-            'bus':result[11]
+            'imageUrl':image_urls
         })
 
     return jsonify(data), 200
@@ -299,7 +296,7 @@ def search_houses():
 def get_house_details(hid):
     cursor = mydb.cursor()
     cursor.execute("USE ghdetail")
-    cursor.execute("SELECT title, address, type, agency, layer, pattern, price, deposit, content, hid FROM new_housedetail WHERE hid=%s", (hid,))
+    cursor.execute("SELECT title, address, type, agency, layer, pattern, price, deposit, content, size FROM new_housedetail WHERE hid=%s", (hid,))
     results = cursor.fetchone()
 
     if not results:
@@ -310,15 +307,13 @@ def get_house_details(hid):
     services_dict = {service[0]: bool(service[1]) for service in services}
 
     #* image access
-    PHOTO_DIRECTORY = 'D:/gold_house/jpg'  #! 圖片存取路徑
     house_photo_directory = os.path.join(PHOTO_DIRECTORY, str(hid))
     if not os.path.exists(house_photo_directory):
-        return jsonify({'error': 'House photos not found'}), 404
-
-    image_files = [f for f in os.listdir(house_photo_directory) if os.path.isfile(os.path.join(house_photo_directory, f))]
-    image_urls = [f"http://127.0.0.1:5000/houses/{hid}/{img}" for img in image_files]
+        image_urls = []
+    else:
+        image_files = [f for f in os.listdir(house_photo_directory) if os.path.isfile(os.path.join(house_photo_directory, f))]
+        image_urls = [f"{Flask_url}/houses/{hid}/{img}" for img in image_files]
     
-
     data = {
         'title': results[0],
         'area': results[1][:3],
@@ -334,7 +329,7 @@ def get_house_details(hid):
         'identity': 'undefined', # indefined
         'other': 'undefined', # indefined
         'legalUse': 'undefined',
-        'areaSize': 'undefined',
+        'areaSize': results[9],
         'decoration': 'undefined',
         'propertyRegistration': 'undefined',
         'furniture': services_dict,

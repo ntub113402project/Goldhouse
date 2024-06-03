@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HouseDetailPage extends StatefulWidget {
   final Map<String, dynamic> houseDetails;
@@ -11,6 +12,17 @@ class HouseDetailPage extends StatefulWidget {
 
 class _HouseDetailPageState extends State<HouseDetailPage> {
   int _current = 0;
+
+  // 你的 Line Add Friend URL
+  final String lineAddFriendUrl = 'https://page.line.me/5770521';
+
+  void _addLineFriend() async {
+    if (await canLaunch(lineAddFriendUrl)) {
+      await launch(lineAddFriendUrl);
+    } else {
+      throw 'Could not launch $lineAddFriendUrl';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -253,7 +265,9 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
             ),
           ),
           Introduce(description: widget.houseDetails['description']),
-          Container(
+          GestureDetector(
+            onTap: _addLineFriend,
+            child: Container(
               margin: const EdgeInsets.all(15),
               alignment: Alignment.center,
               height: 100,
@@ -279,7 +293,9 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                         color: Color(0xFF613F26)),
                   )
                 ],
-              ))
+              ),
+            ),
+          )
         ],
       ),
     );

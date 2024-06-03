@@ -135,18 +135,18 @@ class SearchResultPage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        const ClipRRect(
+                        ClipRRect(
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(8),
                             bottomLeft: Radius.circular(8),
                           ),
                           // Uncomment the following lines when using real data
-                          // child: Image.network(
-                          //   result['imageUrl'],
-                          //   fit: BoxFit.cover,
-                          //   width: MediaQuery.of(context).size.width * 0.35,
-                          //   height: double.infinity,
-                          // ),
+                          child: Image.network(
+                            result['imageUrl'],
+                            fit: BoxFit.cover,
+                            width: MediaQuery.of(context).size.width * 0.35,
+                            height: double.infinity,
+                          ),
                         ),
                         Expanded(
                           child: Padding(
