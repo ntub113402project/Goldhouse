@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/pages/collection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,7 +23,7 @@ class AccountPage extends StatelessWidget {
           if (snapshot.data == true) {
             return PersonalPage();
           } else {
-            return LoginPage();
+            return LoginFirstPage();
           }
         }
       },
@@ -265,7 +266,14 @@ class _PersonalPageState extends State<PersonalPage> {
                 color: Color(0xFF613F26),
                 height: 20,
               ),
-              const ListTile(
+              ListTile(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => CollectionPage()),
+                  );
+                },
                 leading: Icon(
                   Icons.favorite_rounded,
                   size: 30,

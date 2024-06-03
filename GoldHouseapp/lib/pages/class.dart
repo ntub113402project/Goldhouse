@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 class House {
   final int id;
   final String type;
@@ -7,29 +8,30 @@ class House {
   final String district;
   final int price;
   final List<String> imageUrl; 
+  bool isFavorite;
   
-  House({required this.id, required this.type, required this.name, required this.size, required this.city, required this.district, required this.price, required this.imageUrl});
+  House({required this.id, required this.type, required this.name, required this.size, required this.city, required this.district, required this.price, required this.imageUrl, this.isFavorite=true});
 }
 final List<House> houses = [
     House(
       id: 1,
       imageUrl: ['https://img1.591.com.tw/house/2024/04/27/171421638417334102.jpg!750x588.water2.jpg','https://img1.591.com.tw/house/2024/05/24/171652713612887601.jpg!1000x.water2.jpg','https://img2.591.com.tw/house/2024/05/24/171652713608955407.jpg!1000x.water2.jpg'], 
       type: '獨立套房',
-      name: '中山站9分獨立門戶',
+      name: '中正9分獨立門戶',
       size: 8,
       city: '台北市',
-      district: '中山區',
+      district: '中正區',
       price: 20000,   
     ),
     House(
       id: 2,
-      imageUrl: ['https://img1.591.com.tw/house/2024/04/27/171421638417334102.jpg!750x588.water2.jpg','https://img1.591.com.tw/house/2024/05/24/171652713612887601.jpg!1000x.water2.jpg'], 
+      imageUrl: ['https://img1.591.com.tw/house/2022/08/13/166038129846143218.jpg!1000x.water2.jpg'], 
       type: '獨立套房',
-      name: '中山站9分獨立門戶',
+      name: '光復橋🌳西園陽台大套房/可寵物/可報稅',
       size: 8,
       city: '台北市',
-      district: '中山區',
-      price: 20000,   
+      district: '萬華區',
+      price: 18000,   
     ),
   ];
 
@@ -84,6 +86,58 @@ class HouseDetail {
     required this.bus,
   });
 
-}    
+}   
 
-    
+List<String> allservices = [
+    '冰箱',
+    '洗衣機',
+    '電視',
+    '冷氣',
+    '熱水器',
+    '瓦斯',
+    '床',
+    '衣櫃',
+    '第四台',
+    '沙發',
+    '桌椅',
+    '陽台',
+    '電梯',
+    '車位',
+    '廚房'
+  ];
+
+final Map<String, IconData> servicesIcons = {
+    '冰箱': Icons.kitchen_rounded,
+    '洗衣機': Icons.local_laundry_service_rounded,
+    '電視': Icons.tv_rounded,
+    '冷氣': Icons.ac_unit_rounded,
+    '熱水器': Icons.water_damage_rounded,
+    '瓦斯': Icons.fireplace_rounded,
+    '床': Icons.bed_rounded,
+    '衣櫃': Icons.storage,
+    '第四台': Icons.cable_rounded,
+    '沙發': Icons.weekend_rounded,
+    '桌椅': Icons.event_seat_rounded,
+    '陽台': Icons.balcony_rounded,
+    '電梯': Icons.elevator_rounded,
+    '車位': Icons.local_parking_rounded,
+    '廚房': Icons.restaurant_menu_rounded
+  };
+
+  final Map<String, IconData> servicesIcons1 = {
+    '冰箱': Icons.kitchen_rounded,
+    '洗衣機': Icons.local_laundry_service_rounded,
+    '電視': Icons.tv_rounded,
+    '冷氣': Icons.ac_unit_rounded,
+    '熱水器': Icons.water_damage_rounded,
+    '天然瓦斯': Icons.fireplace_rounded,
+    '床': Icons.bed_rounded,
+    '衣櫃': Icons.storage,
+    '第四台': Icons.cable_rounded,
+    '沙發': Icons.weekend_rounded,
+    '桌椅': Icons.event_seat_rounded,
+    '陽台': Icons.balcony_rounded,
+    '電梯': Icons.elevator_rounded,
+    '車位': Icons.local_parking_rounded,
+    '網路': Icons.network_wifi,
+  };

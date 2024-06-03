@@ -3,6 +3,7 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'housedetail_page.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -70,13 +71,35 @@ class SearchResultPage extends StatelessWidget {
   final List<dynamic> searchResults;
 
   const SearchResultPage({super.key, required this.searchResults});
-  
+  Future<void> fetchHouseDetails(BuildContext context, String hid) async {
+    final response = await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
+
+    if (response.statusCode == 200) {
+      final houseDetails = json.decode(response.body);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HouseDetailPage(houseDetails: houseDetails),
+        ),
+      );
+    } else {
+      // Handle error
+      print(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load house details')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('搜尋結果'),
+        title: const Text(
+          '搜尋結果',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
         backgroundColor: const Color(0xFFECD8C9),
       ),
       body: ListView.builder(
@@ -101,7 +124,7 @@ class SearchResultPage extends StatelessWidget {
               ],
             ),
             child: GestureDetector(
-              onTap: () {Navigator.pushNamed(context, '/housedetail');},
+              onTap: () {fetchHouseDetails(context, result['hid']);},
               child: Stack(
                 children: [
                   Card(
@@ -113,18 +136,25 @@ class SearchResultPage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        const ClipRRect(
+                        Container(
+                          width: 150,
+                          child: ClipRRect(
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(8),
                             bottomLeft: Radius.circular(8),
                           ),
-                          // child: Image.network(
-                          //   result['imageUrl'],
-                          //   fit: BoxFit.cover,
-                          //   width: MediaQuery.of(context).size.width * 0.35,
-                          //   height: double.infinity,
-                          // ),
+                          child: Image.network(
+                            result['imageUrl'],
+                            fit: BoxFit.fill,
+                            width: MediaQuery.of(context).size.width * 0.35,
+                            height: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image(image: AssetImage('assets/Logo.png'));
+                            },
+                          ),
                         ),
+                        ),
+                        
                         Expanded(
                           child: Padding(
                             padding: const EdgeInsets.all(8),
@@ -353,11 +383,14 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: ElevatedButton(
+                    style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       onSelectionConfirmed(selectedOption);
                       Navigator.pop(context);
                     },
-                    child: const Text('確認'),
+                    child: const Text('確認',style: TextStyle(color: Colors.white),),
                   ),
                 ),
               ],
@@ -464,6 +497,9 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                     ),
                   ),
                   ElevatedButton(
+                    style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       String min = minController.text;
                       String max = maxController.text;
@@ -485,10 +521,13 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                                 content: const Text('最高金額必需大於最低金額'),
                                 actions: [
                                   TextButton(
+                                    style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll(Color(0xFF613F26))),
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
-                                    child: const Text('確認'),
+                                    child: const Text('確認',style: TextStyle(color: Colors.white),),
                                   ),
                                 ],
                               );
@@ -500,7 +539,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                         }
                       }
                     },
-                    child: const Text('確認'),
+                    child: const Text('確認',style: TextStyle(color: Colors.white),),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -572,7 +611,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
   }
 
   void _otherSelectionBottomSheet(BuildContext context) {
-    List<String> options = ['不限', '有陽台', '可養寵物', '可開伙'];
+    List<String> options = ['不限', '有陽台', '可養寵物', '可開伙', '限男', '限女'];
     List<String> selectedOptions = ['不限'];
 
     showModalBottomSheet(
@@ -623,13 +662,16 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: ElevatedButton(
+                      style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll(Color(0xFF613F26))),
                       onPressed: () {
                         setState(() {
                           _selectedOtherOptions = List.from(selectedOptions);
                         });
                         Navigator.pop(context);
                       },
-                      child: const Text('確認'),
+                      child: const Text('確認',style: TextStyle(color: Colors.white),),
                     ),
                   ),
                 ],
@@ -975,11 +1017,14 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                 Padding(
                   padding: const EdgeInsets.all(8),
                   child: ElevatedButton(
+                    style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       onSelectionConfirmed(selectedOption);
                       Navigator.pop(context);
                     },
-                    child: const Text('確認'),
+                    child: const Text('確認',style: TextStyle(color: Colors.white),),
                   ),
                 ),
               ],
@@ -1086,6 +1131,9 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                     ),
                   ),
                   ElevatedButton(
+                    style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       String min = minController.text;
                       String max = maxController.text;
@@ -1110,7 +1158,7 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
-                                    child: const Text('確認'),
+                                    child: const Text('確認',style: TextStyle(color: Colors.white),),
                                   ),
                                 ],
                               );
@@ -1122,7 +1170,7 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                         }
                       }
                     },
-                    child: const Text('確認'),
+                    child: const Text('確認',style: TextStyle(color: Colors.white),),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -1245,13 +1293,16 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                   Padding(
                     padding: const EdgeInsets.all(8),
                     child: ElevatedButton(
+                      style: const ButtonStyle(
+                    backgroundColor:
+                        MaterialStatePropertyAll(Color(0xFF613F26))),
                       onPressed: () {
                         setState(() {
                           _selectedOtherOptions = List.from(selectedOptions);
                         });
                         Navigator.pop(context);
                       },
-                      child: const Text('確認'),
+                      child: const Text('確認',style: TextStyle(color: Colors.white),),
                     ),
                   ),
                 ],

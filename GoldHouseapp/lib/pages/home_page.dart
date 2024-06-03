@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> {
           title: Image.asset(
             "assets/logo_words.png",
             fit: BoxFit.contain,
-            height: 60,
+            height: 70,
           ),
           centerTitle: true,
         ),
@@ -126,13 +126,13 @@ class HouseList extends StatelessWidget {
           ),
           child: GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => HouseDetailPage(
-                          id: houses[index].id,
-                        )), 
-              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //       builder: (context) => HouseDetailPage(
+              //             id: houses[index].id,
+              //           )), 
+              // );
             },
             child: Stack(
               children: [
@@ -145,7 +145,11 @@ class HouseList extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      ClipRRect(
+                      Stack(
+                        children: [
+                          Stack(
+                            children: [
+                              ClipRRect(
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(8),
                           bottomLeft: Radius.circular(8),
@@ -157,6 +161,12 @@ class HouseList extends StatelessWidget {
                           height: double.infinity,
                         ),
                       ),
+                      
+                            ],
+                          )
+                        ],
+                      ),
+                      
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(8),

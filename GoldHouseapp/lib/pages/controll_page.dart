@@ -53,7 +53,7 @@ class _ControllPageState extends State<ControllPage>{
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
-        color: const Color.fromARGB(115, 219, 219, 219),
+        color: Color(0xFFECD8C9),
         elevation: 0, 
         shape: const CircularNotchedRectangle(),
         notchMargin: 10,
@@ -66,7 +66,7 @@ class _ControllPageState extends State<ControllPage>{
               label: '搜尋',
             ),
             _buildTabItem(
-              icon: Icons.add,
+              icon: Icons.create_new_folder_rounded,
               index: 2,
               label: '刊登',
             ),
@@ -109,7 +109,7 @@ class _ControllPageState extends State<ControllPage>{
           Icon(
             icon,
             size: 28,  
-            color: currentTab == index ? const Color.fromARGB(255, 8, 0, 0) : const Color.fromARGB(255, 28, 3, 3),
+            color: currentTab == index ? const Color(0xFF613F26)  : Color.fromARGB(255, 162, 159, 155),
           ),
           Text(
             label,
