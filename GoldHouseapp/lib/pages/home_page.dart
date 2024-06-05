@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'class.dart';
-import 'housedetail_page.dart';
 
 class HomePage extends StatefulWidget {
   @override

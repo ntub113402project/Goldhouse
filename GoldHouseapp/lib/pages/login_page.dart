@@ -3,36 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginFirstPage extends StatelessWidget {
-  const LoginFirstPage({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFECD8C9),
-        title: Image.asset(
-          "assets/logo_words.png",
-          fit: BoxFit.contain,
-          height: 70,
-        ),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF613F26)),
-          onPressed: () {
-            Navigator.pushNamed(context, '/login');
-          },
-          child: const Text(
-            '按這裡登入',
-            style: TextStyle(color:  Color.fromARGB(255, 245, 245, 245)),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class LoginPage extends StatefulWidget {
   @override

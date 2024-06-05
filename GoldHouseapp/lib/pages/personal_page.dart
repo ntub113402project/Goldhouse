@@ -4,13 +4,149 @@ import 'package:flutter_application_1/pages/collection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'login_page.dart';
 import 'controll_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+class LoginFirstPage extends StatelessWidget {
+  const LoginFirstPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: ListView(
+          children: [
+            SizedBox(height: 50,),
+            Container(
+              height: 200,
+              margin: const EdgeInsets.only(top: 10,left: 35,right: 35),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECD8C9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFF613F26), width: 10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    spreadRadius: 5,
+                    blurRadius: 7,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  const SizedBox(
+                    height: 5,
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF613F26)),
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/login');
+                    },
+                    child: const Text(
+                      '按這裡登入',
+                      style:
+                          TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Container(
+          margin:
+              const EdgeInsets.only(top: 35, left: 30, right: 30, bottom: 20),
+          decoration: BoxDecoration(
+              color: const Color.fromARGB(255, 252, 252, 252),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color.fromARGB(255, 73, 65, 65).withOpacity(0.1),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: const Offset(0, 3),
+                ),
+              ]),
+          child: const Column(
+            children: [
+              SizedBox(
+                height: 10,
+              ),
+               ListTile(
+                leading: Icon(
+                  Icons.person,
+                  size: 30,
+                  color: Color(0xFF613F26),
+                ),
+                title: Text(
+                  "個人資料",
+                  style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+              ),
+              Divider(
+                color: Color(0xFF613F26),
+                height: 20,
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.lock,
+                  size: 30,
+                  color: Color(0xFF613F26),
+                ),
+                title: Text(
+                  "更改密碼",
+                  style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+              ),
+              Divider(
+                color: Color(0xFF613F26),
+                height: 20,
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.favorite_rounded,
+                  size: 30,
+                  color: Color(0xFF613F26),
+                ),
+                title: Text(
+                  "我的收藏",
+                  style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+              ),
+              Divider(
+                color: Color(0xFF613F26),
+                height: 20,
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.loyalty,
+                  size: 30,
+                  color: Color(0xFF613F26),
+                ),
+                title: Text(
+                  "瀏覽紀錄",
+                  style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+            ],
+          ),
+        ),
+          ],
+        ));
+  }
+}
+
 class AccountPage extends StatelessWidget {
-   AccountPage({super.key});
+  AccountPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -270,8 +406,7 @@ class _PersonalPageState extends State<PersonalPage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => CollectionPage()),
+                    MaterialPageRoute(builder: (context) => CollectionPage()),
                   );
                 },
                 leading: Icon(
@@ -370,10 +505,19 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
       if (response.statusCode == 200) {
         // 更新成功
         widget.onUpdate();
-        ScaffoldMessenger.of(context).removeCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('資料已更新')),
-        );
+        showDialog(context: context, builder: (BuildContext context) {
+          return AlertDialog(
+            content: const Text('修改成功'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.pop;
+                },
+              ),
+            ],
+          );
+        },);
         // 更新 SharedPreferences
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('username', _nameController.text);
