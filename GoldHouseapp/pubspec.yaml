@@ -18,6 +18,7 @@ dependencies:
   http: ^1.2.1
   shared_preferences: ^2.2.3
   cached_network_image: ^3.2.0
+  loading_animation_widget: ^1.2.1
 
 dev_dependencies:
   flutter_test:

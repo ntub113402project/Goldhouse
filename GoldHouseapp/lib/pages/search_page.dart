@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'housedetail_page.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class SearchPage extends StatefulWidget {
   @override
@@ -67,12 +68,38 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-class SearchResultPage extends StatelessWidget {
+class SearchResultPage extends StatefulWidget {
   final List<dynamic> searchResults;
 
   const SearchResultPage({super.key, required this.searchResults});
+
+  @override
+  _SearchResultPageState createState() => _SearchResultPageState();
+}
+
+class _SearchResultPageState extends State<SearchResultPage> {
+  List<dynamic> _displayResults = [];
+  int _currentMax = 8;
+  late ScrollController _scrollController;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayResults = widget.searchResults.take(_currentMax).toList();
+    _scrollController = ScrollController()..addListener(_loadMore);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_loadMore);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> fetchHouseDetails(BuildContext context, String hid) async {
-    final response = await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
+    final response =
+        await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
 
     if (response.statusCode == 200) {
       final houseDetails = json.decode(response.body);
@@ -83,11 +110,28 @@ class SearchResultPage extends StatelessWidget {
         ),
       );
     } else {
-      // Handle error
       print(response.body);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load house details')),
       );
+    }
+  }
+
+  void _loadMore() {
+    if (_scrollController.position.pixels ==
+            _scrollController.position.maxScrollExtent &&
+        !_isLoading) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      Future.delayed(const Duration(milliseconds: 2500), () {
+        setState(() {
+          _currentMax = _currentMax + 8;
+          _displayResults = widget.searchResults.take(_currentMax).toList();
+          _isLoading = false;
+        });
+      });
     }
   }
 
@@ -102,115 +146,147 @@ class SearchResultPage extends StatelessWidget {
         centerTitle: true,
         backgroundColor: const Color(0xFFECD8C9),
       ),
-      body: ListView.builder(
-        itemCount: searchResults.length,
-        itemBuilder: (context, index) {
-          var result = searchResults[index];
-          return Container(
-            width: MediaQuery.of(context).size.width,
-            height: 130,
-            margin:
-                const EdgeInsets.only(left: 20, right: 20, top: 10, bottom: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: GestureDetector(
-              onTap: () {fetchHouseDetails(context, result['hid']);},
-              child: Stack(
-                children: [
-                  Card(
-                    elevation: 0,
-                    margin: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
+      body: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index == _displayResults.length) {
+                  return _isLoading
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 5, bottom: 10),
+                          child: Center(
+                              child: Column(
+                            children: [
+                              LoadingAnimationWidget.staggeredDotsWave(
+                                color: Colors.brown,
+                                size: 32,
+                              ),
+                              const Text(
+                                '加載中',
+                                style: TextStyle(
+                                    color: Color.fromARGB(255, 119, 119, 119),
+                                    fontSize: 13),
+                              )
+                            ],
+                          )))
+                      : Container();
+                }
+                var result = _displayResults[index];
+                return Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 130,
+                  margin: const EdgeInsets.only(
+                      left: 20, right: 20, top: 10, bottom: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 1,
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: GestureDetector(
+                    onTap: () {
+                      fetchHouseDetails(context, result['hid']);
+                    },
+                    child: Stack(
                       children: [
-                        Container(
-                          width: 150,
-                          child: ClipRRect(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
+                        Card(
+                          elevation: 0,
+                          margin: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Image.network(
-                            result['imageUrl'],
-                            fit: BoxFit.fill,
-                            width: MediaQuery.of(context).size.width * 0.35,
-                            height: double.infinity,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image(image: AssetImage('assets/Logo.png'));
-                            },
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 150,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    bottomLeft: Radius.circular(8),
+                                  ),
+                                  child: Image.network(
+                                    result['imageUrl'],
+                                    fit: BoxFit.fill,
+                                    width: MediaQuery.of(context).size.width *
+                                        0.35,
+                                    height: double.infinity,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image(
+                                          image: AssetImage('assets/Logo.png'));
+                                    },
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${result['pattern']} | ${result['title']}',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${result['size']}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        '${result['address']}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        ),
-                        
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${result['pattern']} | ${result['title']}',
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${result['size']}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  '${result['address']}',
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
+                        Positioned(
+                          bottom: 6,
+                          right: 8,
+                          child: Text(
+                            '${result['price']}元/月',
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 249, 58, 58),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Positioned(
-                    bottom: 6,
-                    right: 8,
-                    child: Text(
-                      '${result['price']}元/月',
-                      style: const TextStyle(
-                        color: Color.fromARGB(255, 249, 58, 58),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
+              childCount: _displayResults.length + 1,
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -384,13 +460,16 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                   padding: const EdgeInsets.all(8),
                   child: ElevatedButton(
                     style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll(Color(0xFF613F26))),
+                        backgroundColor:
+                            MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       onSelectionConfirmed(selectedOption);
                       Navigator.pop(context);
                     },
-                    child: const Text('確認',style: TextStyle(color: Colors.white),),
+                    child: const Text(
+                      '確認',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -498,8 +577,8 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                   ),
                   ElevatedButton(
                     style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll(Color(0xFF613F26))),
+                        backgroundColor:
+                            MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       String min = minController.text;
                       String max = maxController.text;
@@ -522,12 +601,16 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                                 actions: [
                                   TextButton(
                                     style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll(Color(0xFF613F26))),
+                                        backgroundColor:
+                                            MaterialStatePropertyAll(
+                                                Color(0xFF613F26))),
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
-                                    child: const Text('確認',style: TextStyle(color: Colors.white),),
+                                    child: const Text(
+                                      '確認',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ),
                                 ],
                               );
@@ -539,7 +622,10 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                         }
                       }
                     },
-                    child: const Text('確認',style: TextStyle(color: Colors.white),),
+                    child: const Text(
+                      '確認',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -663,15 +749,18 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                     padding: const EdgeInsets.all(8),
                     child: ElevatedButton(
                       style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll(Color(0xFF613F26))),
+                          backgroundColor:
+                              MaterialStatePropertyAll(Color(0xFF613F26))),
                       onPressed: () {
                         setState(() {
                           _selectedOtherOptions = List.from(selectedOptions);
                         });
                         Navigator.pop(context);
                       },
-                      child: const Text('確認',style: TextStyle(color: Colors.white),),
+                      child: const Text(
+                        '確認',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
@@ -1018,13 +1107,16 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                   padding: const EdgeInsets.all(8),
                   child: ElevatedButton(
                     style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll(Color(0xFF613F26))),
+                        backgroundColor:
+                            MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       onSelectionConfirmed(selectedOption);
                       Navigator.pop(context);
                     },
-                    child: const Text('確認',style: TextStyle(color: Colors.white),),
+                    child: const Text(
+                      '確認',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -1132,8 +1224,8 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                   ),
                   ElevatedButton(
                     style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll(Color(0xFF613F26))),
+                        backgroundColor:
+                            MaterialStatePropertyAll(Color(0xFF613F26))),
                     onPressed: () {
                       String min = minController.text;
                       String max = maxController.text;
@@ -1158,7 +1250,10 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                                     onPressed: () {
                                       Navigator.of(context).pop();
                                     },
-                                    child: const Text('確認',style: TextStyle(color: Colors.white),),
+                                    child: const Text(
+                                      '確認',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ),
                                 ],
                               );
@@ -1170,7 +1265,10 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                         }
                       }
                     },
-                    child: const Text('確認',style: TextStyle(color: Colors.white),),
+                    child: const Text(
+                      '確認',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                   const SizedBox(height: 10),
                 ],
@@ -1294,15 +1392,18 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
                     padding: const EdgeInsets.all(8),
                     child: ElevatedButton(
                       style: const ButtonStyle(
-                    backgroundColor:
-                        MaterialStatePropertyAll(Color(0xFF613F26))),
+                          backgroundColor:
+                              MaterialStatePropertyAll(Color(0xFF613F26))),
                       onPressed: () {
                         setState(() {
                           _selectedOtherOptions = List.from(selectedOptions);
                         });
                         Navigator.pop(context);
                       },
-                      child: const Text('確認',style: TextStyle(color: Colors.white),),
+                      child: const Text(
+                        '確認',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
                   ),
                 ],
