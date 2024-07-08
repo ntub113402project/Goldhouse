@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class SubscriptionPage extends StatefulWidget {
   @override
@@ -8,62 +10,35 @@ class SubscriptionPage extends StatefulWidget {
 
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<Map<String, dynamic>> subscriptions = [];
-  List<Map<String, String>> properties = [
-    { 
-      'title': '某套房',
-      'city': '台北市',
-      'area': '大同區',
-      'type': '獨立套房',
-      'price': '20000',
-      'size': '10坪',
-      'roomcount': '1房',
-      'imageurl' : 'https://img1.591.com.tw/house/2024/03/23/171118774822759601.jpg!510x400.jpg',
-    },
-    {
-      'title': '漂亮住宅',
-      'city': '台北市',
-      'area': '大安區',
-      'type': '整層住家',
-      'price': '25000',
-      'size': '10坪',
-      'roomcount': '3房',
-      'imageurl' : 'https://img2.591.com.tw/house/2024/04/27/171422831273395908.jpg!510x400.jpg',
 
-    },
-    {
-      'title': '某分租',
-      'city': '新北市',
-      'area': '板橋區',
-      'type': '獨立套房',
-      'price': '15000',
-      'size': '10坪',
-      'roomcount': '1房',
-      'imageurl': 'https://img2.591.com.tw/house/2024/05/23/171647748741358107.jpg!510x400.jpg'
-    },
-  ];
+  Future<void> _fetchProperties(Map<String, dynamic> subscription) async {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/search_properties'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(subscription),
+    );
 
-  void _addSubscription(Map<String, dynamic> subscription) {
-    setState(() {
-      subscriptions.add(subscription);
-    });
+    if (response.statusCode == 200) {
+      final List<dynamic> properties = json.decode(response.body);
+      setState(() {
+        subscriptions.add({
+          'subscription': subscription,
+          'properties': properties,
+        });
+      });
+    } else {
+      print('Failed to fetch properties');
+    }
+  }
+
+  void _addSubscription(Map<String, dynamic> subscription) async {
+    await _fetchProperties(subscription);
   }
 
   void _removeSubscription(int index) {
     setState(() {
       subscriptions.removeAt(index);
     });
-  }
-
-  List<Map<String, String>> _getMatchingProperties(
-      Map<String, dynamic> subscription) {
-    return properties
-        .where((property) =>
-            property['city'] == subscription['city'] &&
-            (subscription['areas'].isEmpty ||
-                subscription['areas'].contains(property['area'])) &&
-            (subscription['type'].isEmpty ||
-                subscription['type'].contains(property['type'])))
-        .toList();
   }
 
   @override
@@ -129,216 +104,205 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 : ListView.builder(
                     itemCount: subscriptions.length,
                     itemBuilder: (context, index) {
-                      final subscription = subscriptions[index];
-                      final matchingProps =
-                          _getMatchingProperties(subscription);
+                      final subscription = subscriptions[index]['subscription'];
+                      final properties = subscriptions[index]['properties'];
 
                       return Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
-                BoxShadow(
-                  color: Color.fromARGB(255, 159, 159, 159).withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 5),
-                ),
-              ],
+                            BoxShadow(
+                              color: Color.fromARGB(255, 159, 159, 159)
+                                  .withOpacity(0.5),
+                              spreadRadius: 1,
+                              blurRadius: 4,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
                         ),
-                          margin:
-                              EdgeInsets.only(left: 10, right: 10, bottom: 20),
-                          child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Theme(
-                                data: Theme.of(context).copyWith(
-                                  splashColor: const Color.fromARGB(0, 255, 255, 255),
+                        margin:
+                            EdgeInsets.only(left: 10, right: 10, bottom: 20),
+                        child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(
+                                splashColor:
+                                    const Color.fromARGB(0, 255, 255, 255),
+                              ),
+                              child: ExpansionTile(
+                                collapsedBackgroundColor:
+                                    Color.fromARGB(255, 250, 247, 247),
+                                childrenPadding:
+                                    const EdgeInsets.only(left: 10),
+                                backgroundColor:
+                                    Color.fromARGB(255, 237, 227, 220),
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${subscription['city']} ${subscription['areas'].isEmpty ? '' : subscription['areas'].join(', ')}',
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18),
+                                    ),
+                                    Text(
+                                      style: TextStyle(fontSize: 16),
+                                      '類型：${subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['types'].isEmpty ? '不限' : subscription['types'].join(',')}',
+                                    ),
+                                  ],
                                 ),
-                                child: ExpansionTile(
-                                  collapsedBackgroundColor:
-                                      Color.fromARGB(255, 250, 247, 247),
-                                  childrenPadding:
-                                      const EdgeInsets.only(left: 10),
-                                  backgroundColor:
-                                      Color.fromARGB(255, 237, 227, 220),
-                                  title: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${subscription['city']} ${subscription['areas'].isEmpty ? '' : subscription['areas'].join(', ')}',
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 18),
-                                      ),
-                                      Text(
-                                        style: TextStyle(fontSize: 16),
-                                        '類型：${subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['types'].isEmpty ? '不限' : subscription['types'].join(',')}',
-                                      ),
-                                    ],
-                                  ),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () {
-                                      _removeSubscription(index);
-                                    },
-                                  ),
-                                  children: matchingProps
-                                      .map((property) => GestureDetector(
-                                          onTap: () {
-                                            Navigator.pushNamed(
-                                                context, '/housedetail');
-                                          },
-                                          child: Container(
-                                            width: MediaQuery.of(context)
-                                                .size
-                                                .width,
-                                            height: 130,
-                                            margin: const EdgeInsets.only(
-                                                left: 20,
-                                                right: 20,
-                                                top: 10,
-                                                bottom: 10),
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              color: Colors.white,
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.grey
-                                                      .withOpacity(0.5),
-                                                  spreadRadius: 1,
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 2),
-                                                ),
-                                              ],
-                                            ),
-                                            child: GestureDetector(
-                                              onTap: () {
-                                                Navigator.pushNamed(
-                                                    context, '/housedetail');
-                                              },
-                                              child: Stack(
-                                                children: [
-                                                  Card(
-                                                    elevation: 0,
-                                                    margin: EdgeInsets.zero,
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                         ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius.only(
-                                                            topLeft:
-                                                                Radius.circular(
-                                                                    8),
-                                                            bottomLeft:
-                                                                Radius.circular(
-                                                                    8),
-                                                          ),
-                                                          child: Image.network(
-                                                            property['imageurl'] ?? 'https://example.com/default-image.jpg',
-                                                            fit: BoxFit.cover,
-                                                            width: MediaQuery.of(context).size.width * 0.35,
-                                                            height: double.infinity,
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8),
-                                                            child: Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                Text(
-                                                                  '${property['type']} | ${property['title']}',
-                                                                  style:
-                                                                      const TextStyle(
-                                                                    fontSize:
-                                                                        15,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                  maxLines: 2,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .clip,
-                                                                ),
-                                                                const SizedBox(
-                                                                    height: 2),
-                                                                Text(
-                                                                  '${property['size']} ${property['city']}${property['area']}',
-                                                                  style:
-                                                                      const TextStyle(
-                                                                    fontSize:
-                                                                        14,
-                                                                  ),
-                                                                  maxLines: 1,
-                                                                  overflow:
-                                                                      TextOverflow
-                                                                          .clip,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Positioned(
-                                                    bottom: 6,
-                                                    right: 8,
-                                                    child: Row(
-                                                      children: [
-                                                        Text(
-                                                          '${property['price']}',
-                                                          style:
-                                                              const TextStyle(
-                                                            color:
-                                                                Color.fromARGB(
-                                                                    255,
-                                                                    249,
-                                                                    58,
-                                                                    58),
-                                                            fontSize: 18,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                        const Text(
-                                                          ' 元/月',
-                                                          style: TextStyle(
-                                                              color: Color
-                                                                  .fromARGB(
-                                                                      255,
-                                                                      249,
-                                                                      58,
-                                                                      58),
-                                                              fontSize: 13),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () {
+                                    _removeSubscription(index);
+                                  },
+                                ),
+                                children: properties
+                                    .map<Widget>((property) => GestureDetector(
+                                        onTap: () {
+                                          Navigator.pushNamed(
+                                              context, '/housedetail');
+                                        },
+                                        child: Container(
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          height: 130,
+                                          margin: const EdgeInsets.only(
+                                              left: 20,
+                                              right: 20,
+                                              top: 10,
+                                              bottom: 10),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            color: Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.grey
+                                                    .withOpacity(0.5),
+                                                spreadRadius: 1,
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2),
                                               ),
-                                            ),
-                                          )))
-                                      .toList(),
-                                ),
-                              )));
+                                            ],
+                                          ),
+                                          child: Stack(
+                                            children: [
+                                              Card(
+                                                elevation: 0,
+                                                margin: EdgeInsets.zero,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.start,
+                                                  children: [
+                                                    ClipRRect(
+                                                      borderRadius:
+                                                          BorderRadius.only(
+                                                        topLeft:
+                                                            Radius.circular(8),
+                                                        bottomLeft:
+                                                            Radius.circular(8),
+                                                      ),
+                                                      child: Image.network(
+                                                        property['imageurl'] ?? 'assets/Logo.png',
+                                                        fit: BoxFit.cover,
+                                                        width: MediaQuery.of(
+                                                                    context)
+                                                                .size
+                                                                .width *
+                                                            0.35,
+                                                        height: double.infinity,
+                                                        errorBuilder: (context,
+                                                            error, stackTrace) {
+                                                          return Image(
+                                                              width: 130,
+                                                              image: AssetImage(
+                                                                  'assets/Logo.png'));
+                                                        },
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8),
+                                                        child: Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                              '${property['type']} | ${property['title']}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontSize: 15,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                              maxLines: 2,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .clip,
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 2),
+                                                            Text(
+                                                              '${property['size']} ${property['area']}',
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontSize: 14,
+                                                              ),
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .clip,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              Positioned(
+                                                bottom: 6,
+                                                right: 8,
+                                                child: Row(
+                                                  children: [
+                                                    Text(
+                                                      '${property['price']}',
+                                                      style: const TextStyle(
+                                                        color: Color.fromARGB(
+                                                            255, 249, 58, 58),
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    const Text(
+                                                      ' 元/月',
+                                                      style: TextStyle(
+                                                          color: Color.fromARGB(
+                                                              255, 249, 58, 58),
+                                                          fontSize: 13),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )))
+                                    .toList(),
+                              ),
+                            )),
+                      );
                     },
                   ),
           ),
@@ -362,7 +326,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
   List<String> _selectedAreas = [];
   List<String> cities = ['台北市', '新北市', '台中市'];
   Map<String, List<String>> cityDistricts = {
-    '台北市': ['中正區','大同區', '大安區', '士林區','萬華區'],
+    '台北市': ['中正區', '大同區', '大安區', '士林區', '萬華區'],
     '新北市': ['板橋區', '新店區', '中和區'],
     '台中市': ['北屯區', '西屯區', '南屯區'],
   };
@@ -1002,12 +966,14 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               onPressed: () {
                 Map<String, dynamic> subscriptionData = {
                   'city': _selectedCity,
-                  'areas': _selectedAreas,
-                  'type': _selectedtype,
+                  'areas': _selectedAreas.isEmpty
+                      ? ['不限']
+                      : _selectedAreas, // 確保這裡是多選的地區
+                  'type': _selectedtype.isEmpty ? ['不限'] : _selectedtype,
                   'rentalrange': _selectedRentalRange,
                   'roomcount': _selectedRoomCount,
                   'size': _selectedHouseSize,
-                  'types': _selectedTypes,
+                  'types': _selectedTypes.isEmpty ? ['不限'] : _selectedTypes,
                 };
                 widget.onSubmit(subscriptionData);
                 Navigator.pop(context);
