@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SubscriptionPage extends StatefulWidget {
   @override
@@ -961,28 +962,53 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               height: 20,
             ),
             ElevatedButton(
-              style: const ButtonStyle(
-                  backgroundColor: MaterialStatePropertyAll(Color(0xFF613F26))),
-              onPressed: () {
-                Map<String, dynamic> subscriptionData = {
-                  'city': _selectedCity,
-                  'areas': _selectedAreas.isEmpty
-                      ? ['不限']
-                      : _selectedAreas, // 確保這裡是多選的地區
-                  'type': _selectedtype.isEmpty ? ['不限'] : _selectedtype,
-                  'rentalrange': _selectedRentalRange,
-                  'roomcount': _selectedRoomCount,
-                  'size': _selectedHouseSize,
-                  'types': _selectedTypes.isEmpty ? ['不限'] : _selectedTypes,
-                };
-                widget.onSubmit(subscriptionData);
-                Navigator.pop(context);
-              },
-              child: const Text(
-                '新增訂閱',
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-            ),
+  style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF613F26)),
+  onPressed: () async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberid = prefs.getInt('member_id');
+
+    if (memberid == null) {
+      print('Member ID not found');
+      return;
+    }
+
+    Map<String, dynamic> subscriptionData = {
+      'member_id': memberid,
+      'city': _selectedCity,
+      'areas': _selectedAreas.isEmpty ? ['不限'] : _selectedAreas,
+      'type': _selectedtype.isEmpty ? ['不限'] : _selectedtype,
+      'rentalrange': _selectedRentalRange,
+      'roomcount': _selectedRoomCount,
+      'size': _selectedHouseSize,
+      'types': _selectedTypes.isEmpty ? ['不限'] : _selectedTypes,
+    };
+
+    // 打印发送的数据以进行调试
+    print("Sending subscription data: $subscriptionData");
+
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/add_subscription'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(subscriptionData),
+    );
+
+    // 打印响应数据以进行调试
+    print("Response status: ${response.statusCode}");
+    print("Response body: ${response.body}");
+
+    if (response.statusCode == 200) {
+      widget.onSubmit(subscriptionData);
+      Navigator.pop(context);
+    } else {
+      print('Failed to save subscription');
+    }
+  },
+  child: const Text(
+    '新增訂閱',
+    style: TextStyle(color: Colors.white, fontSize: 18),
+  ),
+)
           ],
         ),
       ),
