@@ -12,34 +12,127 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<Map<String, dynamic>> subscriptions = [];
 
-  Future<void> _fetchProperties(Map<String, dynamic> subscription) async {
+  Future<void> _fetchProperties(Map<String, dynamic> subscription, int index) async {
+    int? subscriptionId = subscriptions[index]['subscription_id'];  
+
+    if (subscriptionId == null) {
+      print('Subscription ID not found');
+      return;
+    }
+
     final response = await http.post(
       Uri.parse('http://4.227.176.245:5000/search_properties'),
       headers: {'Content-Type': 'application/json'},
-      body: json.encode(subscription),
+      body: json.encode({
+        ...subscription,
+        'subscription_id': subscriptionId,  
+      }),
     );
 
     if (response.statusCode == 200) {
       final List<dynamic> properties = json.decode(response.body);
       setState(() {
-        subscriptions.add({
-          'subscription': subscription,
-          'properties': properties,
-        });
+        subscriptions[index]['properties'] = properties;
       });
     } else {
       print('Failed to fetch properties');
     }
   }
 
-  void _addSubscription(Map<String, dynamic> subscription) async {
-    await _fetchProperties(subscription);
+  Future<void> _saveSubscriptions() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> subscriptionList =
+        subscriptions.map((sub) => json.encode(sub)).toList();
+    await prefs.setStringList('subscriptions', subscriptionList);
   }
 
-  void _removeSubscription(int index) {
+  Future<void> _loadSubscriptions() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? subscriptionList = prefs.getStringList('subscriptions');
+    if (subscriptionList != null) {
+      setState(() {
+        subscriptions = subscriptionList
+            .map((sub) => json.decode(sub) as Map<String, dynamic>)
+            .toList();
+      });
+    }
+
+    int? memberId = prefs.getInt('member_id');
+    if (memberId != null) {
+      print('Member ID: $memberId');
+    } else {
+      print('Member ID not found');
+    }
+  }
+
+  void _addSubscription(Map<String, dynamic> subscription) async {
+    print('Adding subscription: $subscription');
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/add_subscription'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(subscription),
+    );
+
+    if (response.statusCode == 200) {
+      final responseData = json.decode(response.body);
+      final subscriptionTime = responseData['subscription_time'];
+      final subscriptionId = responseData['subscription_id'];
+      setState(() {
+        subscriptions.add({
+          'subscription': subscription,
+          'subscription_time': subscriptionTime,
+          'subscription_id': subscriptionId,
+          'properties': [],
+        });
+      });
+      await _fetchProperties({
+        ...subscription,
+        'subscription_time': subscriptionTime,
+      }, subscriptions.length - 1);
+      await _saveSubscriptions();
+
+     
+    } else {
+      print('Failed to add subscription');
+    }
+  }
+
+  void _removeSubscription(int index) async {
     setState(() {
       subscriptions.removeAt(index);
     });
+    await _saveSubscriptions();
+  }
+
+  Future<void> _updateLastCheckTime(int subscriptionId) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+
+    if (memberId == null) {
+      print('Member ID not found');
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/update_last_check_time'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'subscription_id': subscriptionId,
+        'member_id': memberId,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Last check time updated successfully');
+    } else {
+      print('Failed to update last check time');
+    }
+  }
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadSubscriptions();
   }
 
   @override
@@ -106,14 +199,12 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     itemCount: subscriptions.length,
                     itemBuilder: (context, index) {
                       final subscription = subscriptions[index]['subscription'];
-                      final properties = subscriptions[index]['properties'];
-
                       return Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Color.fromARGB(255, 159, 159, 159)
+                              color: Color.fromARGB(255, 234, 226, 206)
                                   .withOpacity(0.5),
                               spreadRadius: 1,
                               blurRadius: 4,
@@ -124,190 +215,232 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                         margin:
                             EdgeInsets.only(left: 10, right: 10, bottom: 20),
                         child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Theme(
-                              data: Theme.of(context).copyWith(
-                                splashColor:
-                                    const Color.fromARGB(0, 255, 255, 255),
-                              ),
-                              child: ExpansionTile(
-                                collapsedBackgroundColor:
-                                    Color.fromARGB(255, 250, 247, 247),
-                                childrenPadding:
-                                    const EdgeInsets.only(left: 10),
-                                backgroundColor:
-                                    Color.fromARGB(255, 237, 227, 220),
-                                title: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${subscription['city']} ${subscription['areas'].isEmpty ? '' : subscription['areas'].join(', ')}',
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(
+                              splashColor:
+                                  const Color.fromARGB(0, 255, 255, 255),
+                            ),
+                            child: ListTile(
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              title: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${subscription['city']} ${subscription['areas'].isEmpty ? '' : subscription['areas'].join(', ')}',
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
                                     ),
-                                    Text(
-                                      style: TextStyle(fontSize: 16),
-                                      '類型：${subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['types'].isEmpty ? '不限' : subscription['types'].join(',')}',
-                                    ),
-                                  ],
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.delete),
-                                  onPressed: () {
-                                    _removeSubscription(index);
-                                  },
-                                ),
-                                children: properties
-                                    .map<Widget>((property) => GestureDetector(
-                                        onTap: () {
-                                          Navigator.pushNamed(
-                                              context, '/housedetail');
-                                        },
-                                        child: Container(
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          height: 130,
-                                          margin: const EdgeInsets.only(
-                                              left: 20,
-                                              right: 20,
-                                              top: 10,
-                                              bottom: 10),
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                            color: Colors.white,
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.5),
-                                                spreadRadius: 1,
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Stack(
-                                            children: [
-                                              Card(
-                                                elevation: 0,
-                                                margin: EdgeInsets.zero,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.start,
-                                                  children: [
-                                                    ClipRRect(
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                        topLeft:
-                                                            Radius.circular(8),
-                                                        bottomLeft:
-                                                            Radius.circular(8),
-                                                      ),
-                                                      child: Image.network(
-                                                        property['imageurl'] ?? 'assets/Logo.png',
-                                                        fit: BoxFit.cover,
-                                                        width: MediaQuery.of(
-                                                                    context)
-                                                                .size
-                                                                .width *
-                                                            0.35,
-                                                        height: double.infinity,
-                                                        errorBuilder: (context,
-                                                            error, stackTrace) {
-                                                          return Image(
-                                                              width: 130,
-                                                              image: AssetImage(
-                                                                  'assets/Logo.png'));
-                                                        },
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(8),
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              '${property['type']} | ${property['title']}',
-                                                              style:
-                                                                  const TextStyle(
-                                                                fontSize: 15,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                              maxLines: 2,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .clip,
-                                                            ),
-                                                            const SizedBox(
-                                                                height: 2),
-                                                            Text(
-                                                              '${property['size']} ${property['area']}',
-                                                              style:
-                                                                  const TextStyle(
-                                                                fontSize: 14,
-                                                              ),
-                                                              maxLines: 1,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .clip,
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Positioned(
-                                                bottom: 6,
-                                                right: 8,
-                                                child: Row(
-                                                  children: [
-                                                    Text(
-                                                      '${property['price']}',
-                                                      style: const TextStyle(
-                                                        color: Color.fromARGB(
-                                                            255, 249, 58, 58),
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                    const Text(
-                                                      ' 元/月',
-                                                      style: TextStyle(
-                                                          color: Color.fromARGB(
-                                                              255, 249, 58, 58),
-                                                          fontSize: 13),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        )))
-                                    .toList(),
+                                  ),
+                                  Text(
+                                    style: TextStyle(fontSize: 16),
+                                    '類型：${subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['types'].isEmpty ? '不限' : subscription['types'].join(', ')}',
+                                  ),
+                                ],
                               ),
-                            )),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  _removeSubscription(index);
+                                },
+                              ),
+                              onTap: () async {
+                                int? subscriptionId = subscriptions[index]['subscription_id']; 
+                                if (subscriptionId != null) {
+                                  await _fetchProperties(subscriptions[index]['subscription'], index);
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => PropertyDetailsPage(
+                                        properties: subscriptions[index]['properties'],
+                                        subscription: subscriptions[index]['subscription'],
+                                        subscriptionId: subscriptionId,  
+                                        onReturn: _updateLastCheckTime,  
+                                      ),
+                                    ),
+                                  ).then((_) async {
+                                    await _updateLastCheckTime(subscriptionId);
+                                    SharedPreferences prefs = await SharedPreferences.getInstance();
+                                    prefs.setString('last_check_time', DateTime.now().toUtc().toString());
+                                  });
+                                } else {
+                                  print('subscription_id is null');
+                                }
+                              },
+                            ),
+                          ),
+                        ),
                       );
                     },
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class PropertyDetailsPage extends StatelessWidget {
+  final List<dynamic> properties;
+  final Map<String, dynamic> subscription;
+  final int subscriptionId;
+  final Future<void> Function(int) onReturn;
+
+  PropertyDetailsPage({
+    required this.properties,
+    required this.subscription,
+    required this.subscriptionId,
+    required this.onReturn,
+  });
+
+  void _handlePop(bool value) {
+    onReturn(subscriptionId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      onPopInvoked: _handlePop,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFECD8C9),
+          title: Text(
+            '${subscription['city']} - 房屋结果',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+        ),
+        body: properties.isEmpty
+            ? Center(
+                child: Text(
+                  '尚未有新刊登的房屋',
+                  style: TextStyle(
+                      fontSize: 20, color: Color.fromARGB(255, 181, 181, 181)),
+                ),
+              )
+            : ListView.builder(
+                itemCount: properties.length,
+                itemBuilder: (context, index) {
+                  final property = properties[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/housedetail');
+                    },
+                    child: Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: 130,
+                      margin: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 10,
+                        bottom: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        children: [
+                          Card(
+                            elevation: 0,
+                            margin: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    bottomLeft: Radius.circular(8),
+                                  ),
+                                  child: Image.network(
+                                    property['imageUrl'] ?? 'assets/Logo.png',
+                                    fit: BoxFit.cover,
+                                    width:
+                                        MediaQuery.of(context).size.width * 0.35,
+                                    height: double.infinity,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image(
+                                        width: 130,
+                                        image: AssetImage('assets/Logo.png'),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${property['type']} | ${property['title']}',
+                                          style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.clip,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${property['size']} ${property['area']}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.clip,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 6,
+                            right: 8,
+                            child: Row(
+                              children: [
+                                Text(
+                                  '${property['price']}',
+                                  style: const TextStyle(
+                                    color: Color.fromARGB(255, 249, 58, 58),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const Text(
+                                  ' 元/月',
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 249, 58, 58),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
       ),
     );
   }
@@ -962,8 +1095,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               height: 20,
             ),
             ElevatedButton(
-  style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF613F26)),
+  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF613F26)),
   onPressed: () async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? memberid = prefs.getInt('member_id');
@@ -984,25 +1116,8 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       'types': _selectedTypes.isEmpty ? ['不限'] : _selectedTypes,
     };
 
-    // 打印发送的数据以进行调试
-    print("Sending subscription data: $subscriptionData");
-
-    final response = await http.post(
-      Uri.parse('http://4.227.176.245:5000/add_subscription'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(subscriptionData),
-    );
-
-    // 打印响应数据以进行调试
-    print("Response status: ${response.statusCode}");
-    print("Response body: ${response.body}");
-
-    if (response.statusCode == 200) {
-      widget.onSubmit(subscriptionData);
-      Navigator.pop(context);
-    } else {
-      print('Failed to save subscription');
-    }
+    widget.onSubmit(subscriptionData);
+    Navigator.pop(context);
   },
   child: const Text(
     '新增訂閱',
