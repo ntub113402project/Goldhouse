@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'housedetail_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class CreateHousePage extends StatefulWidget {
   @override
@@ -302,7 +304,7 @@ class _AddPageState extends State<AddPage> {
         });
       }
     } catch (e) {
-      print("图片选择失败：$e");
+      print("图片選擇失敗：$e");
     }
   }
 
@@ -312,37 +314,54 @@ class _AddPageState extends State<AddPage> {
     });
   }
 
-  void _submitData() {
-    List<String> imagePaths =
-        _imageFileList!.map((xFile) => xFile.path).toList();
-    Map<String, dynamic> data = {
-      'city': _selectedCity,
-      'area': _selectedArea ?? '未選擇',
-      'title': titleController.text,
-      'address': addressController.text,
-      'description': descriptionController.text,
-      'charge': chargeController.text,
-      'chargecontain': _selectedchargecontain,
-      'deposit': _selecteddeposit ?? '未選擇',
-      'roomtype': _selectedroomtype ?? '未選擇',
-      'atfloor': atfloorController.text,
-      'allfloor': allfloorController.text,
-      'size': sizeController.text,
-      'housetype': _seletedhousetype,
-      'service': _selectedservice,
-      'lessorType': _lessortype == 1 ? '屋主' : '房仲',
-      'pet': _pet == 1 ? '可養寵物' : '不可養寵物',
-      'genderlimit':
-          _genderlimit == 1 ? '限男' : (_genderlimit == 2 ? '限女' : '不限'),
-      'lessorname': lessornameController.text,
-      'lessorgender': _lessorgender == 1 ? '先生' : '小姐',
-      'lessorphone': lessorphoneController.text,
-      'image': imagePaths,
-    };
+  void _submitData() async {
+  List<String> imagePaths = _imageFileList!.map((xFile) => xFile.path).toList();
+  List<Map<String, dynamic>> serviceList = service.map((device) {
+      return {
+        'device': device,
+        'avaliable': _selectedservice.contains(device) ? 1 : 0,
+      };
+    }).toList();
 
+  Map<String, dynamic> data = {
+    'city': _selectedCity,
+    'area': _selectedArea ?? '未選擇',
+    'title': titleController.text,
+    'address': addressController.text,
+    'description': descriptionController.text,
+    'charge': chargeController.text,
+    'chargecontain': _selectedchargecontain,
+    'deposit': _selecteddeposit ?? '未選擇',
+    'roomtype': _selectedroomtype ?? '未選擇',
+    'atfloor': atfloorController.text,
+    'allfloor': allfloorController.text,
+    'layer': '${atfloorController.text}/${allfloorController.text}',
+    'size': sizeController.text,
+    'housetype': _seletedhousetype,
+    'service': serviceList,
+    'lessorType': _lessortype == 0 ? '屋主' : '房仲',
+    'pet': _pet == 1 ? '可養寵物' : '不可養寵物',
+    'genderlimit': _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限'),
+    'lessorname': lessornameController.text,
+    'lessorgender': _lessorgender == 0 ? '先生' : '小姐',
+    'lessorphone': lessorphoneController.text,
+    'image': imagePaths,
+  };
+
+  final response = await http.post(
+    Uri.parse('http://4.227.176.245:5000/add_house'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode(data),
+  );
+
+  if (response.statusCode == 200) {
     widget.onAddHouse(data);
     Navigator.of(context).pop();
+  } else {
+    print('Failed to add house: ${response.body}');
   }
+}
+  
 
   Widget _buildListTile(String titleText, void Function()? onTap,
       {String? trailingText}) {
