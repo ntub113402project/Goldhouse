@@ -1,0 +1,16 @@
+
+MATCH (p:Property)-[:IN_SIZE_RANGE]->(s:SizeRange)
+RETURN p, s
+
+MATCH (p:Property)-[:IN_SIZE_RANGE]->(s:SizeRange), (p)-[:IN_PRICE_RANGE]->(pr:PriceRange)
+RETURN p, s, pr
+
+MATCH (p:Property)-[:HAS_PATTERN]->(pt:Pattern), (p)-[:HAS_TYPE]->(t:Type)
+RETURN p, pt, t
+
+MATCH (p:Property)-[:HAS_PATTERN]->(pt:Pattern),
+      (p)-[:HAS_TYPE]->(t:Type),
+      (p)-[:IN_SIZE_RANGE]->(s:SizeRange),
+      (p)-[:IN_PRICE_RANGE]->(pr:PriceRange)
+RETURN p, pt, t, s, pr
+LIMIT 100
