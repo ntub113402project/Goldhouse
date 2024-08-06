@@ -20,12 +20,16 @@ class _CreateHousePageState extends State<CreateHousePage> {
   }
 
   void _navigateToAddHousePage() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AddPage(onAddHouse: _addHouse),
-      ),
-    );
+  final houseData = await Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => AddPage(onAddHouse: _addHouse),
+    ),
+  );
+
+  if (houseData != null) {
+    _addHouse(houseData);
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -253,22 +257,23 @@ class _AddPageState extends State<AddPage> {
     '電視',
     '冷氣',
     '熱水器',
-    '瓦斯',
     '床',
     '衣櫃',
     '第四台',
+    '網路',
+    '天然瓦斯',
     '沙發',
     '桌椅',
     '陽台',
     '電梯',
     '車位',
-    '廚房'
   ];
   List<String> housetype = ['別墅', '公寓', '電梯大樓', '透天厝'];
   List<String> deposit = ['免押金', '押金一個月', '押金兩個月'];
 
   int? _lessortype = 0;
   int? _pet = 0;
+  int? _fire = 0;
   int? _genderlimit = 0;
   int? _lessorgender = 0;
   void _handleRadioValuChangedlessortype(int? value) {
@@ -282,7 +287,12 @@ class _AddPageState extends State<AddPage> {
       _pet = value ?? 0;
     });
   }
-
+  
+  void _handleRadioValuChangedfire(int? value) {
+    setState(() {
+      _fire = value ?? 0;
+    });
+  }
   void _handleRadioValuChangedgender(int? value) {
     setState(() {
       _genderlimit = value ?? 0;
@@ -315,52 +325,76 @@ class _AddPageState extends State<AddPage> {
   }
 
   void _submitData() async {
-  List<String> imagePaths = _imageFileList!.map((xFile) => xFile.path).toList();
-  List<Map<String, dynamic>> serviceList = service.map((device) {
-      return {
-        'device': device,
-        'avaliable': _selectedservice.contains(device) ? 1 : 0,
-      };
-    }).toList();
+    final uri = Uri.parse('http://4.227.176.245:5000/add_house');
+    final request = http.MultipartRequest('POST', uri);
 
-  Map<String, dynamic> data = {
-    'city': _selectedCity,
-    'area': _selectedArea ?? '未選擇',
-    'title': titleController.text,
-    'address': addressController.text,
-    'description': descriptionController.text,
-    'charge': chargeController.text,
-    'chargecontain': _selectedchargecontain,
-    'deposit': _selecteddeposit ?? '未選擇',
-    'roomtype': _selectedroomtype ?? '未選擇',
-    'atfloor': atfloorController.text,
-    'allfloor': allfloorController.text,
-    'layer': '${atfloorController.text}/${allfloorController.text}',
-    'size': sizeController.text,
-    'housetype': _seletedhousetype,
-    'service': serviceList,
-    'lessorType': _lessortype == 0 ? '屋主' : '房仲',
-    'pet': _pet == 1 ? '可養寵物' : '不可養寵物',
-    'genderlimit': _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限'),
-    'lessorname': lessornameController.text,
-    'lessorgender': _lessorgender == 0 ? '先生' : '小姐',
-    'lessorphone': lessorphoneController.text,
-    'image': imagePaths,
-  };
 
-  final response = await http.post(
-    Uri.parse('http://4.227.176.245:5000/add_house'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode(data),
-  );
+    request.fields['city'] = _selectedCity;
+    request.fields['area'] = _selectedArea ?? '未選擇';
+    request.fields['title'] = titleController.text;
+    request.fields['address'] = addressController.text;
+    request.fields['description'] = descriptionController.text;
+    request.fields['charge'] = chargeController.text;
+    request.fields['chargecontain'] = jsonEncode(_selectedchargecontain);
+    request.fields['deposit'] = _selecteddeposit ?? '未選擇';
+    request.fields['roomtype'] = _selectedroomtype ?? '未選擇';
+    request.fields['atfloor'] = atfloorController.text;
+    request.fields['allfloor'] = allfloorController.text;
+    request.fields['size'] = sizeController.text;
+    request.fields['housetype'] = _seletedhousetype ?? '未選擇';
+    request.fields['service'] = jsonEncode(_selectedservice);
+    request.fields['lessorType'] = _lessortype == 0 ? '屋主' : '房仲';
+    request.fields['pet'] = _pet == 0 ? '可' : '不可';
+    request.fields['fire'] = _fire == 0 ? '可' : '不可';
+    request.fields['genderlimit'] = _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限');
+    request.fields['lessorname'] = lessornameController.text;
+    request.fields['lessorgender'] = _lessorgender == 0 ? '先生' : '小姐';
+    request.fields['lessorphone'] = lessorphoneController.text;
 
-  if (response.statusCode == 200) {
-    widget.onAddHouse(data);
-    Navigator.of(context).pop();
-  } else {
-    print('Failed to add house: ${response.body}');
+
+    for (var imageFile in _imageFileList!) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'images',
+        imageFile.path,
+      ));
+    }
+
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      final responseBody = await response.stream.bytesToString();
+      print('House added successfully: $responseBody');
+      Map<String, dynamic> houseData = {
+      'city': _selectedCity,
+      'area': _selectedArea,
+      'title': titleController.text,
+      'address': addressController.text,
+      'description': descriptionController.text,
+      'charge': chargeController.text,
+      'chargecontain': _selectedchargecontain,
+      'deposit': _selecteddeposit,
+      'roomtype': _selectedroomtype,
+      'atfloor': atfloorController.text,
+      'allfloor': allfloorController.text,
+      'size': sizeController.text,
+      'housetype': _seletedhousetype,
+      'service': _selectedservice,
+      'lessorType': _lessortype == 0 ? '屋主' : '房仲',
+      'pet': _pet == 0 ? '可' : '不可',
+      'fire': _fire == 0 ? '可' : '不可',
+      'genderlimit': _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限'),
+      'lessorname': lessornameController.text,
+      'lessorgender': _lessorgender == 0 ? '先生' : '小姐',
+      'lessorphone': lessorphoneController.text,
+      'image': _imageFileList!.map((xFile) => xFile.path).toList(),
+    };
+
+    Navigator.of(context).pop(houseData);
+    } else {
+      print('Failed to add house: ${response.statusCode}');
+      
+    }
   }
-}
   
 
   Widget _buildListTile(String titleText, void Function()? onTap,
@@ -1031,7 +1065,7 @@ class _AddPageState extends State<AddPage> {
                               color: Color(0xFF613F26), fontSize: 20)),
                     )),
                     Radio(
-                      value: 1,
+                      value: 0,
                       groupValue: _pet,
                       onChanged: _handleRadioValuChangedpet,
                     ),
@@ -1040,7 +1074,7 @@ class _AddPageState extends State<AddPage> {
                       style: TextStyle(fontSize: 16, color: Color(0xFF613F26)),
                     ),
                     Radio(
-                      value: 2,
+                      value: 1,
                       groupValue: _pet,
                       onChanged: _handleRadioValuChangedpet,
                     ),
@@ -1072,12 +1106,58 @@ class _AddPageState extends State<AddPage> {
                   children: [
                     const Expanded(
                         child: ListTile(
+                      title: Text('開伙',
+                          style: TextStyle(
+                              color: Color(0xFF613F26), fontSize: 20)),
+                    )),
+                    Radio(
+                      value: 0,
+                      groupValue: _fire,
+                      onChanged: _handleRadioValuChangedfire,
+                    ),
+                    const Text(
+                      '可開伙',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF613F26)),
+                    ),
+                    Radio(
+                      value: 1,
+                      groupValue: _fire,
+                      onChanged: _handleRadioValuChangedfire,
+                    ),
+                    const Text(
+                      '不可開伙',
+                      style: TextStyle(fontSize: 16, color: Color(0xFF613F26)),
+                    ),
+                    const SizedBox(
+                      width: 7,
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      blurRadius: 3,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Expanded(
+                        child: ListTile(
                       title: Text('性別限制',
                           style: TextStyle(
                               color: Color(0xFF613F26), fontSize: 20)),
                     )),
                     Radio(
-                      value: 1,
+                      value: 0,
                       groupValue: _genderlimit,
                       onChanged: _handleRadioValuChangedgender,
                     ),
@@ -1086,7 +1166,7 @@ class _AddPageState extends State<AddPage> {
                       style: TextStyle(fontSize: 16, color: Color(0xFF613F26)),
                     ),
                     Radio(
-                      value: 2,
+                      value: 1,
                       groupValue: _genderlimit,
                       onChanged: _handleRadioValuChangedgender,
                     ),
@@ -1095,7 +1175,7 @@ class _AddPageState extends State<AddPage> {
                       style: TextStyle(fontSize: 16, color: Color(0xFF613F26)),
                     ),
                     Radio(
-                      value: 3,
+                      value: 2,
                       groupValue: _genderlimit,
                       onChanged: _handleRadioValuChangedgender,
                     ),
@@ -1142,7 +1222,7 @@ class _AddPageState extends State<AddPage> {
                   ),
                   SizedBox(width: 10),
                   Radio(
-                    value: 1,
+                    value: 0,
                     groupValue: _lessorgender,
                     onChanged: _handleRadioValuChangedlessorgender,
                   ),
@@ -1151,7 +1231,7 @@ class _AddPageState extends State<AddPage> {
                     style: TextStyle(fontSize: 16, color: Color(0xFF613F26)),
                   ),
                   Radio(
-                    value: 2,
+                    value: 1,
                     groupValue: _lessorgender,
                     onChanged: _handleRadioValuChangedlessorgender,
                   ),
