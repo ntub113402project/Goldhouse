@@ -1,0 +1,86 @@
+﻿[
+  {
+    "n": {
+      "identity": 10552,
+      "labels": [
+        "PriceRange"
+      ],
+      "properties": {
+        "name": "25000~30000"
+      },
+      "elementId": "4:6f970aec-2393-41e1-b4cd-571b48a703b1:10552"
+    }
+  },
+  {
+    "n": {
+      "identity": 10558,
+      "labels": [
+        "PriceRange"
+      ],
+      "properties": {
+        "name": "20000~25000"
+      },
+      "elementId": "4:6f970aec-2393-41e1-b4cd-571b48a703b1:10558"
+    }
+  },
+  {
+    "n": {
+      "identity": 10562,
+      "labels": [
+        "PriceRange"
+      ],
+      "properties": {
+        "name": "30000~inf"
+      },
+      "elementId": "4:6f970aec-2393-41e1-b4cd-571b48a703b1:10562"
+    }
+  },
+  {
+    "n": {
+      "identity": 10565,
+      "labels": [
+        "PriceRange"
+      ],
+      "properties": {
+        "name": "5000~10000"
+      },
+      "elementId": "4:6f970aec-2393-41e1-b4cd-571b48a703b1:10565"
+    }
+  },
+  {
+    "n": {
+      "identity": 10602,
+      "labels": [
+        "PriceRange"
+      ],
+      "properties": {
+        "name": "10000~15000"
+      },
+      "elementId": "4:6f970aec-2393-41e1-b4cd-571b48a703b1:10602"
+    }
+  },
+  {
+    "n": {
+      "identity": 10618,
+      "labels": [
+        "PriceRange"
+      ],
+      "properties": {
+        "name": "15000~20000"
+      },
+      "elementId": "4:6f970aec-2393-41e1-b4cd-571b48a703b1:10618"
+    }
+  },
+  {
+    "n": {
+      "identity": 11118,
+      "labels": [
+        "PriceRange"
+      ],
+      "properties": {
+        "name": "0~5000"
+      },
+      "elementId": "4:6f970aec-2393-41e1-b4cd-571b48a703b1:11118"
+    }
+  }
+]
