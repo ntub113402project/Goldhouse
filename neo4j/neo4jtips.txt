@@ -8,9 +8,25 @@ RETURN p, s, pr
 MATCH (p:Property)-[:HAS_PATTERN]->(pt:Pattern), (p)-[:HAS_TYPE]->(t:Type)
 RETURN p, pt, t
 
+MATCH (p:Property)-[:NEAR_BUS]->(b:Bus),
+      (p)-[:NEAR_SUBWAY]->(sub:Subway)
+RETURN p, b, sub
+LIMIT 100
+
 MATCH (p:Property)-[:HAS_PATTERN]->(pt:Pattern),
       (p)-[:HAS_TYPE]->(t:Type),
       (p)-[:IN_SIZE_RANGE]->(s:SizeRange),
       (p)-[:IN_PRICE_RANGE]->(pr:PriceRange)
 RETURN p, pt, t, s, pr
 LIMIT 100
+
+MATCH (p:Property)-[:HAS_PATTERN]->(pt:Pattern),
+      (p)-[:HAS_TYPE]->(t:Type),
+      (p)-[:IN_SIZE_RANGE]->(s:SizeRange),
+      (p)-[:IN_PRICE_RANGE]->(pr:PriceRange),
+      (p)-[:NEAR_BUS]->(b:Bus),
+      (p)-[:NEAR_SUBWAY]->(sub:Subway),
+      (p)-[:NEAR_STORE]->(store:Store)
+RETURN p, pt, t, s, pr, b, sub, store
+LIMIT 100
+
