@@ -231,7 +231,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                     '${subscription['city']} ${subscription['areas'].isEmpty ? '' : subscription['areas'].join(', ')}',
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
                                     ),

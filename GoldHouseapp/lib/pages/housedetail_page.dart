@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:io';
 import 'class.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HouseDetailPage extends StatefulWidget {
   final Map<String, dynamic> houseDetails;
+  
   const HouseDetailPage({super.key, required this.houseDetails});
 
   @override
@@ -183,7 +186,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
               runSpacing: 12,
               alignment: WrapAlignment.spaceEvenly,
               children: [
-                _buildInfoChip('地區', widget.houseDetails['area']),
+                _buildInfoChip('地區', widget.houseDetails['district']),
                 _buildInfoChip('房屋類型', widget.houseDetails['houseType']),
                 _buildInfoChip('坪數', widget.houseDetails['size']),
                 _buildInfoChip('樓層', widget.houseDetails['floor']),
@@ -263,7 +266,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
             ),
             alignment: Alignment.center,
             child: Text(
-              '${widget.houseDetails['address']}',
+              '${widget.houseDetails['city']}${widget.houseDetails['address']}',
               style: TextStyle(
                   fontSize: 18,
                   color: Color(0xFF613F26),
@@ -272,40 +275,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
           ),
 
           const SizedBox(height: 10),
-          // Padding(
-          //   padding: const EdgeInsets.only(left: 10, right: 10),
-          //   child: Card(
-          //     color: const Color(0xFFECD8C9),
-          //     child: Padding(
-          //       padding: const EdgeInsets.all(16),
-          //       child: Row(
-          //         mainAxisAlignment: MainAxisAlignment.spaceAround,
-          //         mainAxisSize: MainAxisSize.min,
-          //         children: <Widget>[
-          //           Column(
-          //             crossAxisAlignment: CrossAxisAlignment.start,
-          //             children: <Widget>[
-          //               Text('租期: ${widget.houseDetails['rentPeriod']}', style: const TextStyle(fontSize: 18)),
-          //               Text('入住: ${widget.houseDetails['moveInDate']}', style: const TextStyle(fontSize: 18)),
-          //               Text('身份: ${widget.houseDetails['identity']}', style: const TextStyle(fontSize: 18)),
-          //               Text('其他: ${widget.houseDetails['other']}', style: const TextStyle(fontSize: 18)),
-          //             ],
-          //           ),
-          //           const SizedBox(height: 8),
-          //           Column(
-          //             crossAxisAlignment: CrossAxisAlignment.start,
-          //             children: <Widget>[
-          //               Text('法定用途: ${widget.houseDetails['legalUse']}', style: const TextStyle(fontSize: 18)),
-          //               Text('建物面積: ${widget.houseDetails['areaSize']}', style: const TextStyle(fontSize: 18)),
-          //               Text('裝潢訊息: ${widget.houseDetails['decoration']}', style: const TextStyle(fontSize: 18)),
-          //               Text('產權登記: ${widget.houseDetails['propertyRegistration']}', style: const TextStyle(fontSize: 18)),
-          //             ],
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
+          
           const ListTile(
             title: Text(
               '設備',
@@ -375,55 +345,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
             ),
           ),
           SizedBox(height: 7,),
-          // const ListTile(
-          //   title: Text(
-          //     '設備',
-          //     style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
-          //   ),
-          // ),
-          // Padding(
-          //   padding: const EdgeInsets.only(left: 10, right: 10),
-          //   child: Container(
-          //     alignment: Alignment.bottomCenter,
-          //     decoration: BoxDecoration(
-          //       color: const Color(0xFFF5F0F0),
-          //       borderRadius: BorderRadius.circular(20),
-          //     ),
-          //     padding: const EdgeInsets.all(20),
-          //     child: Wrap(
-          //       direction: Axis.horizontal,
-          //       spacing: 10,
-          //       runSpacing: 10,
-          //       children: widget.houseDetails['furniture'].entries
-          //           .map<Widget>((entry) {
-          //         return Chip(
-          //           labelPadding: const EdgeInsets.all(4),
-          //           avatar: const CircleAvatar(
-          //             backgroundColor: Colors.black,
-          //             child: Icon(Icons.check, color: Colors.white),
-          //           ),
-          //           label: Text(
-          //             entry.key,
-          //             style: TextStyle(
-          //               fontSize: 15,
-          //               color: entry.value ? Colors.black : Colors.grey,
-          //               decoration: entry.value
-          //                   ? TextDecoration.none
-          //                   : TextDecoration.lineThrough,
-          //             ),
-          //           ),
-          //           backgroundColor: Colors.white,
-          //           shape: StadiumBorder(
-          //             side: BorderSide(
-          //               color: entry.value ? Colors.black : Colors.grey,
-          //               width: 1,
-          //             ),
-          //           ),
-          //         );
-          //       }).toList(),
-          //     ),
-          //   ),
-          // ),
+
           const ListTile(
             title: Text(
               '房屋簡介',
@@ -690,7 +612,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                     borderRadius: BorderRadius.circular(20.0),
                   ),
                   child: Text(
-                    widget.houseData['area'],
+                    widget.houseData['district'],
                     style: const TextStyle(
                         fontSize: 20,
                         color: Color(0xFF613F26),
@@ -832,7 +754,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
             ),
             alignment: Alignment.center,
             child: Text(
-              '${widget.houseData['city']}${widget.houseData['area']}${widget.houseData['address']}',
+              '${widget.houseData['city']}${widget.houseData['district']}${widget.houseData['address']}',
               style: TextStyle(
                   fontSize: 18,
                   color: Color(0xFF613F26),

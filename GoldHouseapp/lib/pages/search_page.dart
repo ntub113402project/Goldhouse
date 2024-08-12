@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'housedetail_page.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
@@ -86,7 +87,11 @@ class _SearchResultPageState extends State<SearchResultPage> {
   @override
   void initState() {
     super.initState();
-    _displayResults = widget.searchResults.take(_currentMax).toList();
+    // 初始化显示的结果，并确保 isFavorite 属性被正确初始化为 bool 类型
+    _displayResults = widget.searchResults.take(_currentMax).map((result) {
+      result['isFavorite'] = result['isFavorite'] ?? false; // 如果为空则默认 false
+      return result;
+    }).toList();
     _scrollController = ScrollController()..addListener(_loadMore);
   }
 
@@ -132,6 +137,40 @@ class _SearchResultPageState extends State<SearchResultPage> {
           _isLoading = false;
         });
       });
+    }
+  }
+
+  Future<void> _toggleFavorite(int index, String hid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+
+    if (memberId != null) {
+      final response = await http.post(
+        Uri.parse('http://4.227.176.245:5000/favorites'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'member_id': memberId.toString(),
+          'hid': hid,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _displayResults[index]['isFavorite'] =
+              !_displayResults[index]['isFavorite'];
+        });
+        
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('收藏失敗')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('請先登入')),
+      );
     }
   }
 
@@ -206,25 +245,45 @@ class _SearchResultPageState extends State<SearchResultPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 150,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    bottomLeft: Radius.circular(8),
+                              Stack(
+                                children: [
+                                  SizedBox(
+                                    width: 150,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        bottomLeft: Radius.circular(8),
+                                      ),
+                                      child: Image.network(
+                                        result['imageUrl'],
+                                        fit: BoxFit.fill,
+                                        width:
+                                            MediaQuery.of(context).size.width *
+                                                0.35,
+                                        height: double.infinity,
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Image(
+                                              image: AssetImage(
+                                                  'assets/Logo.png'));
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                  child: Image.network(
-                                    result['imageUrl'],
-                                    fit: BoxFit.fill,
-                                    width: MediaQuery.of(context).size.width *
-                                        0.35,
-                                    height: double.infinity,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image(
-                                          image: AssetImage('assets/Logo.png'));
-                                    },
+                                  Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: IconButton(
+                                      icon: Icon(result['isFavorite'] ?? false
+                                          ? Icons.favorite
+                                          : Icons.favorite_border),
+                                      color: Colors.red,
+                                      onPressed: () {
+                                        _toggleFavorite(index, result['hid']);
+                                      },
+                                    ),
                                   ),
-                                ),
+                                ],
                               ),
                               Expanded(
                                 child: Padding(
@@ -252,12 +311,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                       Text(
-                                        '${result['address']}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
+                                        '${result['city']} ${result['district']}',
                                       ),
                                     ],
                                   ),
@@ -873,7 +927,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
 
 class CityPage extends StatelessWidget {
   final List<String> cities = [
-    '台北市',
+    '臺北市',
     '新北市',
     '基隆市',
     '宜蘭縣',
@@ -949,7 +1003,7 @@ class DistrictPage extends StatefulWidget {
 
 class _DistrictPageState extends State<DistrictPage> {
   final Map<String, List<String>> cityDistricts = {
-    '台北市': ['不限', '中正區', '萬華區', '中山區', '大同區', '士林區'],
+    '臺北市': ['不限', '中正區', '萬華區', '中山區', '大同區', '士林區'],
     '新北市': ['不限', '板橋區', '中和區', '永和區'],
     '高雄市': ['不限', '三民區', '鼓山區', '苓雅區'],
   };
