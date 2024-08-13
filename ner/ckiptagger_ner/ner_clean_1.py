@@ -68,15 +68,6 @@ def remove_duplicates_and_manage_empty(data):
     return data
 
 
-
-# Process data
-for item in data:
-    if 'store' in item:
-        item['store'] = preprocess_names(item['store'])
-        item['store'] = clean_and_filter(item['store'])
-
-data = remove_duplicates_and_manage_empty(data)
-
 # Save data to file
 with open(output_file_path, "w", encoding="utf-8") as file:
     json.dump(data, file, ensure_ascii=False, indent=4)
