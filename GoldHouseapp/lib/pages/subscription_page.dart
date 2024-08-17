@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'housedetail_page.dart';
+
 class SubscriptionPage extends StatefulWidget {
   @override
   State<SubscriptionPage> createState() => _SubscriptionPageState();
@@ -228,7 +230,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${subscription['city']} ${subscription['areas'].isEmpty ? '' : subscription['areas'].join(', ')}',
+                                    '${subscription['city']} ${(subscription['district'] == null || subscription['district'].isEmpty) ? '' : subscription['district'].join(', ')}',
+
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                     style: const TextStyle(
@@ -299,6 +302,7 @@ class PropertyDetailsPage extends StatelessWidget {
   void _handlePop(bool value) {
     onReturn(subscriptionId);
   }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -327,7 +331,6 @@ class PropertyDetailsPage extends StatelessWidget {
                   final property = properties[index];
                   return GestureDetector(
                     onTap: () {
-                      Navigator.pushNamed(context, '/housedetail');
                     },
                     child: Container(
                       width: MediaQuery.of(context).size.width,
@@ -398,7 +401,7 @@ class PropertyDetailsPage extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${property['size']} ${property['area']}',
+                                          '${property['size']} ${property['district']}',
                                           style: const TextStyle(
                                             fontSize: 14,
                                           ),
@@ -553,15 +556,15 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                     Expanded(
                       child: ListView(
                         children: cityDistricts[_selectedCity]!
-                            .map((area) => CheckboxListTile(
-                                  title: Text(area),
-                                  value: selectedTemp.contains(area),
+                            .map((district) => CheckboxListTile(
+                                  title: Text(district),
+                                  value: selectedTemp.contains(district),
                                   onChanged: (bool? selected) {
                                     setState(() {
                                       if (selected == true) {
-                                        selectedTemp.add(area);
+                                        selectedTemp.add(district);
                                       } else {
-                                        selectedTemp.remove(area);
+                                        selectedTemp.remove(district);
                                       }
                                     });
                                   },
@@ -1108,7 +1111,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
     Map<String, dynamic> subscriptionData = {
       'member_id': memberid,
       'city': _selectedCity,
-      'areas': _selectedAreas.isEmpty ? ['不限'] : _selectedAreas,
+      'district': _selectedAreas.isEmpty ? ['不限'] : _selectedAreas,
       'type': _selectedtype.isEmpty ? ['不限'] : _selectedtype,
       'rentalrange': _selectedRentalRange,
       'roomcount': _selectedRoomCount,

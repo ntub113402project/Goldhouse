@@ -512,7 +512,7 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
               TextButton(
                 child: const Text('OK'),
                 onPressed: () {
-                  Navigator.pop;
+                  Navigator.pop(context);
                 },
               ),
             ],

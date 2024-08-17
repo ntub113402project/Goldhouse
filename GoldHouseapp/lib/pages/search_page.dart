@@ -87,9 +87,8 @@ class _SearchResultPageState extends State<SearchResultPage> {
   @override
   void initState() {
     super.initState();
-    // 初始化显示的结果，并确保 isFavorite 属性被正确初始化为 bool 类型
     _displayResults = widget.searchResults.take(_currentMax).map((result) {
-      result['isFavorite'] = result['isFavorite'] ?? false; // 如果为空则默认 false
+      result['isFavorite'] = result['isFavorite'] ?? false;
       return result;
     }).toList();
     _scrollController = ScrollController()..addListener(_loadMore);
@@ -927,7 +926,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
 
 class CityPage extends StatelessWidget {
   final List<String> cities = [
-    '臺北市',
+    '台北市',
     '新北市',
     '基隆市',
     '宜蘭縣',
@@ -1003,7 +1002,7 @@ class DistrictPage extends StatefulWidget {
 
 class _DistrictPageState extends State<DistrictPage> {
   final Map<String, List<String>> cityDistricts = {
-    '臺北市': ['不限', '中正區', '萬華區', '中山區', '大同區', '士林區'],
+    '台北市': ['不限', '中正區', '萬華區', '中山區', '大同區', '士林區'],
     '新北市': ['不限', '板橋區', '中和區', '永和區'],
     '高雄市': ['不限', '三民區', '鼓山區', '苓雅區'],
   };

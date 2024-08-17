@@ -515,7 +515,9 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> imageUrls = List<String>.from(widget.houseData['image']);
+    List<String> imageUrls = widget.houseData['image'] != null 
+      ? List<String>.from(widget.houseData['image']) 
+      : [];
     List<Widget> allImages = imageUrls
         .map((url) => Image.file(File(url), fit: BoxFit.fitHeight, width: 1000))
         .toList();
