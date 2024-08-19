@@ -30,6 +30,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
   void _onBottomAppBarPressed() async {
   int? memberId = await _getMemberId();
   String hid = widget.houseDetails['hid'].toString();
+  
 
   if (memberId != null && hid.isNotEmpty) {
     final response = await http.post(
@@ -44,7 +45,10 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
     );
 
     if (response.statusCode == 200) {
-      final url = Uri.parse("https://liff.line.me/1645278921-kWRPP32q/?accountId=204wjleq&member_id=$memberId&hid=$hid");
+      String message = "member_id: $memberId\nhid:$hid";
+      String encodedMessage = Uri.encodeComponent(message);
+      
+      final url = Uri.parse("https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
       if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
@@ -498,7 +502,10 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
     );
 
     if (response.statusCode == 200) {
-      final url = Uri.parse("https://liff.line.me/1645278921-kWRPP32q/?accountId=204wjleq&member_id=$memberId&hid=$hid");
+      String message = "member_id: $memberId\nhid:$hid";
+      String encodedMessage = Uri.encodeComponent(message);
+      
+      final url = Uri.parse("https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
       if (await canLaunchUrl(url)) {
         await launchUrl(
           url,
