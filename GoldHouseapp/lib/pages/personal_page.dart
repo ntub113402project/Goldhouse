@@ -4,6 +4,7 @@ import 'package:flutter_application_1/pages/collection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'clickrecord_page.dart';
 import 'controll_page.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -220,6 +221,7 @@ class _PersonalPageState extends State<PersonalPage> {
 
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
     await prefs.setBool('isLoggedIn', false);
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => ControllPage()),
@@ -424,7 +426,13 @@ class _PersonalPageState extends State<PersonalPage> {
                 color: Color(0xFF613F26),
                 height: 20,
               ),
-              const ListTile(
+              ListTile(
+                onTap: () {
+                  Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ClickHistoryPage()),
+                  );
+                },
                 leading: Icon(
                   Icons.loyalty,
                   size: 30,

@@ -106,6 +106,24 @@ List<String> allservices = [
     '廚房'
   ];
 
+List<String> allservices1 = [
+    '冰箱',
+    '洗衣機',
+    '電視',
+    '冷氣',
+    '熱水器',
+    '床',
+    '衣櫃',
+    '第四台',
+    '網路',
+    '天然瓦斯',
+    '沙發',
+    '桌椅',
+    '陽台',
+    '電梯',
+    '車位',
+  ];
+
 final Map<String, IconData> servicesIcons = {
     '冰箱': Icons.kitchen_rounded,
     '洗衣機': Icons.local_laundry_service_rounded,

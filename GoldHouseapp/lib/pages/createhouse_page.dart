@@ -42,6 +42,8 @@ class _CreateHousePageState extends State<CreateHousePage> {
       }).toList();
     });
   }
+  
+
 
   void _navigateToAddHousePage() async {
     final houseData = await Navigator.of(context).push(
@@ -55,54 +57,28 @@ class _CreateHousePageState extends State<CreateHousePage> {
     }
   }
 
-  void _showOptions(BuildContext context, int index) async {
-    setState(() {
-      selectedHouseIndex = index;
-    });
+  void fetchHouseDetails(BuildContext context, String hid) async {
+    final response =
+        await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
 
-    final result = await showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(100, 100, 100, 100),
-      items: [
-        PopupMenuItem(
-          value: 'edit',
-          child: Text('編輯房屋資訊'),
-        ),
-        PopupMenuItem(
-          value: 'view',
-          child: Text('瀏覽房屋'),
-        ),
-      ],
-    );
-
-    if (result == 'edit') {
-      final updatedHouseData = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => EditHousePage(houseData: createhouses[index]),
-        ),
-      );
-
-      if (updatedHouseData != null) {
-        setState(() {
-          createhouses[index] = updatedHouseData;
-          _updateHouseInStorage(index, updatedHouseData); 
-        });
-      }
-    } else if (result == 'view') {
+    if (response.statusCode == 200) {
+      final houseDetails = json.decode(response.body);
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              CreateHouseDetailPage(houseData: createhouses[index]),
+          builder: (context) => CreateHouseDetailPage(houseData: houseDetails),
         ),
       );
+      _hideOverlay();
+    } else {
+      print(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load house details')),
+      );
     }
-
-    setState(() {
-      selectedHouseIndex = null;
-    });
   }
+
+  
 
   void _updateHouseInStorage(
       int index, Map<String, dynamic> updatedHouseData) async {
@@ -111,6 +87,18 @@ class _CreateHousePageState extends State<CreateHousePage> {
 
     storedHouses[index] = jsonEncode(updatedHouseData);
     await prefs.setStringList('storedHouses', storedHouses);
+  }
+
+  void _showOverlay(int index) {
+    setState(() {
+      selectedHouseIndex = index;
+    });
+  }
+
+  void _hideOverlay() {
+    setState(() {
+      selectedHouseIndex = null;
+    });
   }
 
   @override
@@ -173,19 +161,14 @@ class _CreateHousePageState extends State<CreateHousePage> {
                       var imagePath =
                           house['image'] != null && house['image'].isNotEmpty
                               ? house['image'][0]
-                              : 'path/to/default/image.jpg';
-                      return InkWell(
-                        onTap: () => _showOptions(context, index),
-                        child: Container(
+                              : 'assets/Logo.png'; 
+                      return Container(
                           width: MediaQuery.of(context).size.width,
                           height: 130,
                           margin: const EdgeInsets.only(
                               left: 20, right: 20, top: 10, bottom: 10),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            color: selectedHouseIndex == index
-                                ? Colors.grey[300]
-                                : Colors.white,
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.5),
@@ -195,90 +178,173 @@ class _CreateHousePageState extends State<CreateHousePage> {
                               ),
                             ],
                           ),
-                          child: Stack(
-                            children: [
-                              Card(
-                                elevation: 0,
-                                margin: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    ClipRRect(
+                          child: GestureDetector(
+                            onTap: () => _showOverlay(index),
+                            child: Stack(children: [
+                              Stack(
+                                children: [
+                                  Card(
+                                    color: selectedHouseIndex == index
+                                        ? Colors.grey[300]
+                                        : Colors.white,
+                                    elevation: 0,
+                                    margin: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        ClipRRect(
                                       borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(8),
                                         bottomLeft: Radius.circular(8),
                                       ),
                                       child: Image.file(
                                         File(imagePath),
+                                        errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/Logo.png', 
+                                          fit: BoxFit.cover,
+                                          width: MediaQuery.of(context).size.width *
+                                              0.35,
+                                          height: double.infinity,
+                                        );
+                                      },
                                         fit: BoxFit.cover,
                                         width:
                                             MediaQuery.of(context).size.width *
                                                 0.35,
                                         height: double.infinity,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${createhouses[index]['roomtype']} | ${createhouses[index]['title']}',
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.clip,
+                                      ),),
+                                        Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  '${createhouses[index]['pattern']} | ${createhouses[index]['title']}',
+                                                  style: const TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.clip,
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  '${createhouses[index]['size']}坪 ${createhouses[index]['city']}${createhouses[index]['district']}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                  ),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.clip,
+                                                ),
+                                              ],
                                             ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              '${createhouses[index]['size']}坪 ${createhouses[index]['city']}${createhouses[index]['district']}',
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.clip,
-                                            ),
-                                          ],
+                                          ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
+                                  Positioned(
+                                    bottom: 6,
+                                    right: 8,
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          '${createhouses[index]['charge']}',
+                                          style: const TextStyle(
+                                            color: Color.fromARGB(
+                                                255, 249, 58, 58),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const Text(
+                                          ' 元/月',
+                                          style: TextStyle(
+                                              color: Color.fromARGB(
+                                                  255, 249, 58, 58),
+                                              fontSize: 13),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (selectedHouseIndex == index)
+                                Positioned.fill(
+                                  child: GestureDetector(
+                                    onTap: _hideOverlay,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Color.fromARGB(255, 33, 33, 33)
+                                            .withOpacity(0.9),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              String hid =
+                                                  createhouses[index]['hid'];
+                                              fetchHouseDetails(context, hid);
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                            ),
+                                            child: const Text(
+                                              '瀏覽房屋',
+                                              style: TextStyle(
+                                                  color: Colors.black),
+                                            ),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              final updatedHouseData =
+                                                  await Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      EditHousePage(
+                                                          houseData:
+                                                              createhouses[
+                                                                  index]),
+                                                ),
+                                              );
+
+                                              if (updatedHouseData != null) {
+                                                setState(() {
+                                                  createhouses[index] =
+                                                      updatedHouseData;
+                                                  _updateHouseInStorage(
+                                                      index, updatedHouseData);
+                                                });
+                                                _hideOverlay();
+                                              }
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                            ),
+                                            child: const Text(
+                                              '編輯房屋',
+                                              style: TextStyle(
+                                                  color: Colors.black),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                              Positioned(
-                                bottom: 6,
-                                right: 8,
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      '${createhouses[index]['charge']}',
-                                      style: const TextStyle(
-                                        color: Color.fromARGB(255, 249, 58, 58),
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const Text(
-                                      ' 元/月',
-                                      style: TextStyle(
-                                          color:
-                                              Color.fromARGB(255, 249, 58, 58),
-                                          fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                            ]),
+                          ));
                     },
                   ),
           ),
@@ -312,18 +378,18 @@ class _AddPageState extends State<AddPage> {
   String _selectedCity = '未選擇';
   String? _selectedArea = '未選擇';
   bool _isAreaVisible = false;
-  String? _selectedroomtype = '未選擇';
+  String? _selectedpattern = '未選擇';
   List<String> _selectedchargecontain = [];
   List<String> _selectedservice = [];
-  String? _seletedhousetype = '未選擇';
+  String? _seletedtype = '未選擇';
   String? _selecteddeposit = '未選擇';
-  List<String> cities = ['台北市', '新北市', '台中市'];
+  List<String> cities = ['臺北市', '新北市', '台中市'];
   Map<String, List<String>> cityDistricts = {
-    '台北市': ['中正區', '萬華區', '大同區', '士林區', '大安區'],
+    '臺北市': ['中正區', '萬華區', '大同區', '士林區', '大安區'],
     '新北市': ['板橋區', '新店區', '中和區'],
     '台中市': ['北屯區', '西屯區', '南屯區'],
   };
-  List<String> roomtype = ['整層住家', '獨立套房', '分租套房', '雅房'];
+  List<String> pattern = ['整層住家', '獨立套房', '分租套房', '雅房'];
   List<String> lessortype = ['屋主', '房仲'];
   List<String> chargecontain = ['水費', '電費', '管理費', '停車費'];
   List<String> service = [
@@ -343,7 +409,7 @@ class _AddPageState extends State<AddPage> {
     '電梯',
     '車位',
   ];
-  List<String> housetype = ['別墅', '公寓', '電梯大樓', '透天厝'];
+  List<String> type = ['別墅', '公寓', '電梯大樓', '透天厝'];
   List<String> deposit = ['免押金', '押金一個月', '押金兩個月'];
 
   int? _lessortype = 0;
@@ -439,11 +505,11 @@ class _AddPageState extends State<AddPage> {
     request.fields['charge'] = chargeController.text;
     request.fields['chargecontain'] = jsonEncode(_selectedchargecontain);
     request.fields['deposit'] = _selecteddeposit ?? '未選擇';
-    request.fields['roomtype'] = _selectedroomtype ?? '未選擇';
+    request.fields['pattern'] = _selectedpattern ?? '未選擇';
     request.fields['atfloor'] = atfloorController.text;
     request.fields['allfloor'] = allfloorController.text;
     request.fields['size'] = sizeController.text;
-    request.fields['housetype'] = _seletedhousetype ?? '未選擇';
+    request.fields['type'] = _seletedtype ?? '未選擇';
     request.fields['service'] = jsonEncode(_selectedservice);
     request.fields['lessorType'] = _lessortype == 0 ? '屋主' : '房仲';
     request.fields['pet'] = _pet == 0 ? '可' : '不可';
@@ -454,7 +520,6 @@ class _AddPageState extends State<AddPage> {
     request.fields['lessorgender'] = _lessorgender == 0 ? '先生' : '小姐';
     request.fields['lessorphone'] = lessorphoneController.text;
 
-    // 添加图片
     for (var imageFile in _imageFileList!) {
       request.files.add(await http.MultipartFile.fromPath(
         'images',
@@ -488,11 +553,11 @@ class _AddPageState extends State<AddPage> {
           'charge': chargeController.text,
           'chargecontain': _selectedchargecontain,
           'deposit': _selecteddeposit,
-          'roomtype': _selectedroomtype,
+          'pattern': _selectedpattern,
           'atfloor': atfloorController.text,
           'allfloor': allfloorController.text,
           'size': sizeController.text,
-          'housetype': _seletedhousetype,
+          'type': _seletedtype,
           'service': _selectedservice,
           'lessorType': _lessortype == 0 ? '屋主' : '房仲',
           'pet': _pet == 0 ? '可' : '不可',
@@ -868,7 +933,7 @@ class _AddPageState extends State<AddPage> {
                 height: 10,
               ),
               _buildListTile('房屋類型', () async {
-                String? selectedroomtype = await showModalBottomSheet<String>(
+                String? selectedpattern = await showModalBottomSheet<String>(
                   context: context,
                   builder: (BuildContext context) {
                     return ListView(
@@ -880,21 +945,21 @@ class _AddPageState extends State<AddPage> {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             )),
-                        ...roomtype.map((type) => ListTile(
-                              title: Text(type),
-                              onTap: () => Navigator.pop(context, type),
+                        ...pattern.map((pattern) => ListTile(
+                              title: Text(pattern),
+                              onTap: () => Navigator.pop(context, pattern),
                             ))
                       ].toList(),
                     );
                   },
                 );
 
-                if (selectedroomtype != null) {
+                if (selectedpattern != null) {
                   setState(() {
-                    _selectedroomtype = selectedroomtype;
+                    _selectedpattern = selectedpattern;
                   });
                 }
-              }, trailingText: _selectedroomtype),
+              }, trailingText: _selectedpattern),
               const SizedBox(
                 height: 10,
               ),
@@ -1132,7 +1197,7 @@ class _AddPageState extends State<AddPage> {
                 height: 10,
               ),
               _buildListTile('型態', () async {
-                String? selectedhousetype = await showModalBottomSheet<String>(
+                String? selectedtype = await showModalBottomSheet<String>(
                   context: context,
                   builder: (BuildContext context) {
                     return ListView(
@@ -1144,7 +1209,7 @@ class _AddPageState extends State<AddPage> {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             )),
-                        ...housetype.map((type) => ListTile(
+                        ...type.map((type) => ListTile(
                               title: Text(type),
                               onTap: () => Navigator.pop(context, type),
                             ))
@@ -1153,12 +1218,12 @@ class _AddPageState extends State<AddPage> {
                   },
                 );
 
-                if (selectedhousetype != null) {
+                if (selectedtype != null) {
                   setState(() {
-                    _seletedhousetype = selectedhousetype;
+                    _seletedtype = selectedtype;
                   });
                 }
-              }, trailingText: _seletedhousetype),
+              }, trailingText: _seletedtype),
               const SizedBox(
                 height: 10,
               ),
@@ -1525,10 +1590,10 @@ class _EditHousePageState extends State<EditHousePage> {
   String? _selectedCity;
   String? _selectedArea;
   bool _isAreaVisible = false;
-  String? _selectedroomtype;
+  String? _selectedpattern;
   List<String> _selectedchargecontain = [];
   List<String> _selectedservice = [];
-  String? _seletedhousetype;
+  String? _seletedtype;
   String? _selecteddeposit;
   int? _lessortype;
   int? _pet;
@@ -1541,7 +1606,8 @@ class _EditHousePageState extends State<EditHousePage> {
   void initState() {
     super.initState();
 
-    
+
+
     addressController.text = widget.houseData['address'];
     titleController.text = widget.houseData['title'];
     descriptionController.text = widget.houseData['description'];
@@ -1555,15 +1621,15 @@ class _EditHousePageState extends State<EditHousePage> {
     _selectedCity = widget.houseData['city'];
     _selectedArea = widget.houseData['district'];
     _isAreaVisible = _selectedArea != null;
-    _selectedroomtype = widget.houseData['roomtype'];
+    _selectedpattern = widget.houseData['pattern'];
     _selectedchargecontain = widget.houseData['chargecontain'] is String
-      ? [widget.houseData['chargecontain']]
-      : List<String>.from(widget.houseData['chargecontain']);
+        ? [widget.houseData['chargecontain']]
+        : List<String>.from(widget.houseData['chargecontain']);
 
-  _selectedservice = widget.houseData['service'] is String
-      ? [widget.houseData['service']]
-      : List<String>.from(widget.houseData['service']);
-    _seletedhousetype = widget.houseData['housetype'];
+    _selectedservice = widget.houseData['service'] is String
+        ? [widget.houseData['service']]
+        : List<String>.from(widget.houseData['service']);
+    _seletedtype = widget.houseData['type'];
     _selecteddeposit = widget.houseData['deposit'];
     _lessortype = widget.houseData['lessorType'] == '屋主' ? 0 : 1;
     _pet = widget.houseData['pet'] == '可' ? 0 : 1;
@@ -1581,20 +1647,19 @@ class _EditHousePageState extends State<EditHousePage> {
   }
 
   Future<void> _pickImages() async {
-  try {
-    final List<XFile>? pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles != null) {
-      setState(() {
-        _imageFileList!.addAll(pickedFiles);
-      });
-      _onFieldChanged(
-          'images', _imageFileList!.map((xFile) => xFile.path).toList());
+    try {
+      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+      if (pickedFiles != null) {
+        setState(() {
+          _imageFileList!.addAll(pickedFiles);
+        });
+        _onFieldChanged(
+            'images', _imageFileList!.map((xFile) => xFile.path).toList());
+      }
+    } catch (e) {
+      print("图片选择失败：$e");
     }
-  } catch (e) {
-    print("图片选择失败：$e");
   }
-}
-
 
   void _deleteImage(int index) {
     setState(() {
@@ -1605,39 +1670,37 @@ class _EditHousePageState extends State<EditHousePage> {
   }
 
   void _submitData() async {
-  final uri = Uri.parse('http://4.227.176.245:5000/edit_house');
-  final request = http.MultipartRequest('POST', uri);
+    final uri = Uri.parse('http://4.227.176.245:5000/edit_house');
+    final request = http.MultipartRequest('POST', uri);
 
-  request.fields['hid'] = widget.houseData['hid'];
+    request.fields['hid'] = widget.houseData['hid'];
 
-  _changedFields.forEach((key, value) {
-    if (key != 'images') {
-      if (key == 'chargecontain' || key == 'service') {
-        request.fields[key] = value.join(',');
-      } else {
-        request.fields[key] = value.toString();
+    _changedFields.forEach((key, value) {
+      if (key != 'images') {
+        if (key == 'chargecontain' || key == 'service') {
+          request.fields[key] = value.join(',');
+        } else {
+          request.fields[key] = value.toString();
+        }
       }
+    });
+
+    for (var imageFile in _imageFileList!) {
+      request.files.add(await http.MultipartFile.fromPath(
+        'images',
+        imageFile.path,
+      ));
     }
-  });
 
+    final response = await request.send();
 
-  for (var imageFile in _imageFileList!) {
-    request.files.add(await http.MultipartFile.fromPath(
-      'images',
-      imageFile.path,
-    ));
+    if (response.statusCode == 200) {
+      final updatedHouseData = {...widget.houseData, ..._changedFields};
+      Navigator.of(context).pop(updatedHouseData);
+    } else {
+      print('Failed to edit house: ${response.statusCode}');
+    }
   }
-
-  final response = await request.send();
-
-  if (response.statusCode == 200) {
-    final updatedHouseData = {...widget.houseData, ..._changedFields};
-    Navigator.of(context).pop(updatedHouseData);
-  } else {
-    print('Failed to edit house: ${response.statusCode}');
-  }
-
-}
 
   Widget _buildListTile(String titleText, void Function()? onTap,
       {String? trailingText}) {
@@ -1711,7 +1774,7 @@ class _EditHousePageState extends State<EditHousePage> {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             )),
-                        ...['台北市', '新北市', '台中市'].map((city) => ListTile(
+                        ...['臺北市', '新北市', '台中市'].map((city) => ListTile(
                               title: Text(city),
                               onTap: () => Navigator.pop(context, city),
                             ))
@@ -1749,7 +1812,7 @@ class _EditHousePageState extends State<EditHousePage> {
                                       fontWeight: FontWeight.bold,
                                     )),
                                 ...{
-                                  '台北市': ['中正區', '萬華區', '大同區', '士林區', '大安區'],
+                                  '臺北市': ['中正區', '萬華區', '大同區', '士林區', '大安區'],
                                   '新北市': ['板橋區', '新店區', '中和區'],
                                   '台中市': ['北屯區', '西屯區', '南屯區'],
                                 }[_selectedCity]!
@@ -1958,7 +2021,7 @@ class _EditHousePageState extends State<EditHousePage> {
                 if (selectedchargecontain != null) {
                   setState(() {
                     _selectedchargecontain = selectedchargecontain;
-                    _onFieldChanged('chargecontain', _selectedchargecontain);              
+                    _onFieldChanged('chargecontain', _selectedchargecontain);
                   });
                 }
               },
@@ -2001,7 +2064,7 @@ class _EditHousePageState extends State<EditHousePage> {
                 height: 10,
               ),
               _buildListTile('房屋類型', () async {
-                String? selectedroomtype = await showModalBottomSheet<String>(
+                String? selectedpattern = await showModalBottomSheet<String>(
                   context: context,
                   builder: (BuildContext context) {
                     return ListView(
@@ -2014,22 +2077,22 @@ class _EditHousePageState extends State<EditHousePage> {
                               fontWeight: FontWeight.bold,
                             )),
                         ...['整層住家', '獨立套房', '分租套房', '雅房']
-                            .map((type) => ListTile(
-                                  title: Text(type),
-                                  onTap: () => Navigator.pop(context, type),
+                            .map((pattern) => ListTile(
+                                  title: Text(pattern),
+                                  onTap: () => Navigator.pop(context, pattern),
                                 ))
                       ].toList(),
                     );
                   },
                 );
 
-                if (selectedroomtype != null) {
+                if (selectedpattern != null) {
                   setState(() {
-                    _selectedroomtype = selectedroomtype;
-                    _onFieldChanged('roomtype', _selectedroomtype);
+                    _selectedpattern = selectedpattern;
+                    _onFieldChanged('pattern', _selectedpattern);
                   });
                 }
-              }, trailingText: _selectedroomtype),
+              }, trailingText: _selectedpattern),
               const SizedBox(
                 height: 10,
               ),
@@ -2302,7 +2365,7 @@ class _EditHousePageState extends State<EditHousePage> {
                 height: 10,
               ),
               _buildListTile('型態', () async {
-                String? selectedhousetype = await showModalBottomSheet<String>(
+                String? selectedtype = await showModalBottomSheet<String>(
                   context: context,
                   builder: (BuildContext context) {
                     return ListView(
@@ -2323,13 +2386,13 @@ class _EditHousePageState extends State<EditHousePage> {
                   },
                 );
 
-                if (selectedhousetype != null) {
+                if (selectedtype != null) {
                   setState(() {
-                    _seletedhousetype = selectedhousetype;
-                    _onFieldChanged('housetype', _seletedhousetype);
+                    _seletedtype = selectedtype;
+                    _onFieldChanged('type', _seletedtype);
                   });
                 }
-              }, trailingText: _seletedhousetype),
+              }, trailingText: _seletedtype),
               const SizedBox(
                 height: 10,
               ),

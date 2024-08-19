@@ -1,13 +1,16 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:io';
 import 'class.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class HouseDetailPage extends StatefulWidget {
   final Map<String, dynamic> houseDetails;
-  
+
   const HouseDetailPage({super.key, required this.houseDetails});
 
   @override
@@ -17,6 +20,47 @@ class HouseDetailPage extends StatefulWidget {
 class _HouseDetailPageState extends State<HouseDetailPage> {
   int _current = 0;
   
+
+  Future<int?> _getMemberId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+    return memberId;
+  }
+
+  void _onBottomAppBarPressed() async {
+  int? memberId = await _getMemberId();
+  String hid = widget.houseDetails['hid'].toString();
+
+  if (memberId != null && hid.isNotEmpty) {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/save_click'),  
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'member_id': memberId,
+        'hid': hid,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final url = Uri.parse("https://liff.line.me/1645278921-kWRPP32q/?accountId=204wjleq&member_id=$memberId&hid=$hid");
+      if (await canLaunchUrl(url)) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication, 
+        );
+      } else {
+        print('Could not launch $url');
+      }
+    } else {
+      print('Failed to send data to Flask API: ${response.statusCode}');
+    }
+  } else {
+    print('Member ID or HID is missing');
+  }
+}
+
   Widget _buildIntroduce() {
     return Card(
       color: const Color(0xFFECD8C9),
@@ -95,295 +139,309 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> imageUrlList = List<String>.from(widget.houseDetails['imageUrl']);
-    List<Widget> allImages = imageUrlList.map<Widget>((url) => Image.network(url, fit: BoxFit.fill, width: 1000,errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
-
-    return const Image(image: AssetImage('assets/Logo.png'));})).toList();
+    List<String> imageUrlList =
+        List<String>.from(widget.houseDetails['imageUrl']);
+    List<Widget> allImages = imageUrlList
+        .map<Widget>((url) => Image.network(url, fit: BoxFit.fill, width: 1000,
+                errorBuilder: (BuildContext context, Object exception,
+                    StackTrace? stackTrace) {
+              return const Image(image: AssetImage('assets/Logo.png'));
+            }))
+        .toList();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFECD8C9),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFECD8C9),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          title: Image.asset(
+            "assets/logo_words.png",
+            fit: BoxFit.contain,
+            height: 70,
+          ),
+          centerTitle: true,
         ),
-        title: Image.asset(
-          "assets/logo_words.png",
-          fit: BoxFit.contain,
-          height: 70,
-        ),
-        centerTitle: true,
-      ),
-      body: ListView(
-        children: [
-          Stack(
-            alignment: Alignment.bottomCenter,
-            children: <Widget>[
-              CarouselSlider(
-                items: allImages,
-                options: CarouselOptions(
-                  autoPlay: true,
-                  autoPlayInterval: Duration(seconds: 4),
-                  enlargeCenterPage: false,
-                  aspectRatio: 1.5,
-                  viewportFraction: 1,
-                  onPageChanged: (index, reason) {
-                    setState(() {
-                      _current = index;
-                    });
-                  },
+        body: ListView(
+          children: [
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: <Widget>[
+                CarouselSlider(
+                  items: allImages,
+                  options: CarouselOptions(
+                    autoPlay: true,
+                    autoPlayInterval: Duration(seconds: 4),
+                    enlargeCenterPage: false,
+                    aspectRatio: 1.5,
+                    viewportFraction: 1,
+                    onPageChanged: (index, reason) {
+                      setState(() {
+                        _current = index;
+                      });
+                    },
+                  ),
                 ),
-              ),
-              Positioned(
-                bottom: 20,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(allImages.length, (index) {
-                    return GestureDetector(
-                      onTap: () => {},
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              (Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black)
-                                  .withOpacity(_current == index ? 0.9 : 0.4),
+                Positioned(
+                  bottom: 20,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(allImages.length, (index) {
+                      return GestureDetector(
+                        onTap: () => {},
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                (Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.white
+                                        : Colors.black)
+                                    .withOpacity(_current == index ? 0.9 : 0.4),
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 15,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 16, right: 12),
+              child: Align(
+                alignment: Alignment.center,
+                child: Text(
+                  widget.houseDetails['title'],
+                  style: const TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 16, right: 12),
-            child: Align(
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, top: 20, right: 10),
+              child: Wrap(
+                spacing: 5,
+                runSpacing: 12,
+                alignment: WrapAlignment.spaceEvenly,
+                children: [
+                  _buildInfoChip('地區', widget.houseDetails['district']),
+                  _buildInfoChip('房屋類型', widget.houseDetails['houseType']),
+                  _buildInfoChip('坪數', widget.houseDetails['size']),
+                  _buildInfoChip('樓層', widget.houseDetails['floor']),
+                  _buildInfoChip('型態', widget.houseDetails['pattern']),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '租金\n包含',
+                          style: TextStyle(
+                            color: Color(0xFFD1C0C0),
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          '水費|電費',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFFD1C0C0),
+                          ),
+                        )
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            '${widget.houseDetails['price']}元/月',
+                            style: const TextStyle(
+                              color: Color(0xFFE40A0A),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            '${widget.houseDetails['deposit']}',
+                            style: const TextStyle(
+                              color: Color(0xFFD1C0C0),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ]),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              padding: EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
+              margin: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFECD8C9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
               alignment: Alignment.center,
               child: Text(
-                widget.houseDetails['title'],
-                style: const TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                ),
+                '${widget.houseDetails['city']}${widget.houseDetails['address']}',
+                style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFF613F26),
+                    fontWeight: FontWeight.bold),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 10, top: 20, right: 10),
-            child: Wrap(
-              spacing: 5,
-              runSpacing: 12,
-              alignment: WrapAlignment.spaceEvenly,
-              children: [
-                _buildInfoChip('地區', widget.houseDetails['district']),
-                _buildInfoChip('房屋類型', widget.houseDetails['houseType']),
-                _buildInfoChip('坪數', widget.houseDetails['size']),
-                _buildInfoChip('樓層', widget.houseDetails['floor']),
-                _buildInfoChip('型態', widget.houseDetails['pattern']),
-              ],
+            const SizedBox(height: 10),
+            const ListTile(
+              title: Text(
+                '設備',
+                style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF613F26)),
+              ),
             ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
-            child:Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        '租金\n包含',
-                        style: TextStyle(
-                          color: Color(0xFFD1C0C0),
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        '水費|電費',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFFD1C0C0),
-                        ),
-                      )
-                    ],
-                  ), 
-            Column(
-              children: [
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Text(
-                    '${widget.houseDetails['price']}元/月',
-                    style: const TextStyle(
-                      color: Color(0xFFE40A0A),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+            SizedBox(height: 5),
+            Container(
+              margin: const EdgeInsets.only(left: 15, right: 15),
+              padding: const EdgeInsets.all(10),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFECD8C9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 5),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Text(
-                    '${widget.houseDetails['deposit']}',
-                    style: const TextStyle(
-                      color: Color(0xFFD1C0C0),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],)]
-            ),
-          ),
-          SizedBox(height: 10,),
-          Container(
-            padding: EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
-            margin: EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: const Color(0xFFECD8C9),
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${widget.houseDetails['city']}${widget.houseDetails['address']}',
-              style: TextStyle(
-                  fontSize: 18,
-                  color: Color(0xFF613F26),
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-          
-          const ListTile(
-            title: Text(
-              '設備',
-              style: TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF613F26)),
-            ),
-          ),
-          SizedBox(height: 5),
-          Container(
-            margin: const EdgeInsets.only(left: 15, right: 15),
-            padding: const EdgeInsets.all(10),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: const Color(0xFFECD8C9),
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Wrap(
-              direction: Axis.horizontal,
-              spacing: 3,
-              runSpacing: 5,
-              children: widget.houseDetails['furniture'].entries.map<Widget>((entry) {
-                bool isActive = entry.value;
-                return Container(
-                  width: 80,
-                  padding: const EdgeInsets.all(5),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(
-                        servicesIcons1[entry.key],
-                        color: isActive
-                            ? const Color(0xFF613F26)
-                            : const Color.fromARGB(255, 181, 180, 180),
-                        size: 40,
-                      ),
-                      Text(
-                        entry.key,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 15,
+                ],
+              ),
+              child: Wrap(
+                direction: Axis.horizontal,
+                spacing: 3,
+                runSpacing: 5,
+                children: widget.houseDetails['furniture'].entries
+                    .map<Widget>((entry) {
+                  bool isActive = entry.value;
+                  return Container(
+                    width: 80,
+                    padding: const EdgeInsets.all(5),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          servicesIcons1[entry.key],
                           color: isActive
-                              ? const Color.fromARGB(255, 67, 62, 62)
+                              ? const Color(0xFF613F26)
                               : const Color.fromARGB(255, 181, 180, 180),
-                          decoration: isActive
-                              ? TextDecoration.none
-                              : TextDecoration.lineThrough,
-                          decorationColor:
-                              const Color.fromARGB(255, 135, 135, 135),
+                          size: 40,
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                        Text(
+                          entry.key,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isActive
+                                ? const Color.fromARGB(255, 67, 62, 62)
+                                : const Color.fromARGB(255, 181, 180, 180),
+                            decoration: isActive
+                                ? TextDecoration.none
+                                : TextDecoration.lineThrough,
+                            decorationColor:
+                                const Color.fromARGB(255, 135, 135, 135),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-          SizedBox(height: 7,),
-
-          const ListTile(
-            title: Text(
-              '房屋簡介',
-              style: TextStyle( fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF613F26)),),
+            SizedBox(
+              height: 7,
             ),
-          
-          SizedBox(height: 5,),
-          _buildIntroduce(),
-          SizedBox(height: 10,)
-        ],
-      ),
-      bottomNavigationBar: const ClipRRect(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-          child: BottomAppBar(
-            color: Color(0xFF613F26),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.android, size: 45, color: Colors.white),
-                SizedBox(
-                  width: 7,
+            const ListTile(
+              title: Text(
+                '房屋簡介',
+                style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF613F26)),
+              ),
+            ),
+            SizedBox(
+              height: 5,
+            ),
+            _buildIntroduce(),
+            SizedBox(
+              height: 10,
+            )
+          ],
+        ),
+        bottomNavigationBar: GestureDetector(
+          onTap: _onBottomAppBarPressed,
+          child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+              child: BottomAppBar(
+                color: Color(0xFF613F26),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.android, size: 45, color: Colors.white),
+                    SizedBox(
+                      width: 7,
+                    ),
+                    Text(
+                      'Line智能助手',
+                      style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    )
+                  ],
                 ),
-                Text(
-                  'Line智能助手',
-                  style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                )
-              ],
-            ),
-          )),
-    );
+              )),
+        ));
   }
 
   Widget _buildInfoChip(String label, String? value) {
@@ -414,15 +472,54 @@ class CreateHouseDetailPage extends StatefulWidget {
 }
 
 class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
-  
-  
   late Map<String, dynamic> selectedHouse;
   int _current = 0;
+
+  Future<int?> _getMemberId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+    return memberId;
+  }
+
+  void _onBottomAppBarPressed() async {
+  int? memberId = await _getMemberId();
+  String hid = widget.houseData['hid'].toString();
+
+  if (memberId != null && hid.isNotEmpty) {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/save_click'),  
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'member_id': memberId,
+        'hid': hid,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final url = Uri.parse("https://liff.line.me/1645278921-kWRPP32q/?accountId=204wjleq&member_id=$memberId&hid=$hid");
+      if (await canLaunchUrl(url)) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication, 
+        );
+      } else {
+        print('Could not launch $url');
+      }
+    } else {
+      print('Failed to send data to Flask API: ${response.statusCode}');
+    }
+  } else {
+    print('Member ID or HID is missing');
+  }
+}
   @override
   void initState() {
     super.initState();
     selectedHouse = widget.houseData;
   }
+  
 
   Widget _buildIntroduce() {
     return Container(
@@ -456,12 +553,11 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                        '${widget.houseData['lessorname']}${widget.houseData['lessorgender']}',
+                    Text('${widget.houseData['lessorname']}',
                         style: TextStyle(
                             fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text(widget.houseData['lessorType'],
-                        style: TextStyle(fontSize: 15)),
+                    // Text(widget.houseData['lessorType'],
+                    //     style: TextStyle(fontSize: 15)),
                   ],
                 )
               ],
@@ -515,9 +611,9 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> imageUrls = widget.houseData['image'] != null 
-      ? List<String>.from(widget.houseData['image']) 
-      : [];
+    List<String> imageUrls = widget.houseData['image'] != null
+        ? List<String>.from(widget.houseData['image'])
+        : [];
     List<Widget> allImages = imageUrls
         .map((url) => Image.file(File(url), fit: BoxFit.fitHeight, width: 1000))
         .toList();
@@ -630,7 +726,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                     borderRadius: BorderRadius.circular(20.0),
                   ),
                   child: Text(
-                    widget.houseData['roomtype'],
+                    widget.houseData['pattern'],
                     style: const TextStyle(
                         fontSize: 20,
                         color: Color(0xFF613F26),
@@ -646,7 +742,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                     borderRadius: BorderRadius.circular(20.0),
                   ),
                   child: Text(
-                    '${widget.houseData['size']}坪',
+                    '${widget.houseData['size']}',
                     style: const TextStyle(
                         fontSize: 20,
                         color: Color(0xFF613F26),
@@ -662,7 +758,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                     borderRadius: BorderRadius.circular(20.0),
                   ),
                   child: Text(
-                    '${widget.houseData['atfloor']}F / ${widget.houseData['allfloor']}F',
+                    '${widget.houseData['layer']}',
                     style: const TextStyle(
                         fontSize: 20,
                         color: Color(0xFF613F26),
@@ -678,7 +774,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                     borderRadius: BorderRadius.circular(20.0),
                   ),
                   child: Text(
-                    widget.houseData['housetype'],
+                    widget.houseData['type'],
                     style: const TextStyle(
                         fontSize: 20,
                         color: Color(0xFF613F26),
@@ -824,8 +920,8 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
               direction: Axis.horizontal,
               spacing: 3,
               runSpacing: 5,
-              children: allservices.map<Widget>((service) {
-                bool isActive = widget.houseData['service'].contains(service);
+              children: allservices1.map<Widget>((service) {
+                bool isActive = widget.houseData['service'][service] == true;
                 return Container(
                   width: 80,
                   padding: const EdgeInsets.all(5),
@@ -835,7 +931,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
                       Icon(
-                        servicesIcons[service],
+                        servicesIcons1[service],
                         color: isActive
                             ? const Color(0xFF613F26)
                             : const Color.fromARGB(255, 181, 180, 180),
@@ -879,7 +975,9 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
           )
         ],
       ),
-      bottomNavigationBar: const ClipRRect(
+      bottomNavigationBar: GestureDetector(
+        onTap: _onBottomAppBarPressed,
+        child: ClipRRect(
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(30),
             topRight: Radius.circular(30),
@@ -903,6 +1001,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
               ],
             ),
           )),
+      ) 
     );
   }
 }

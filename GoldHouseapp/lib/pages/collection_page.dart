@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'housedetail_page.dart';
+
 class CollectionPage extends StatefulWidget {
   @override
   State<CollectionPage> createState() => _CollectionPageState();
@@ -41,6 +43,26 @@ class _CollectionPageState extends State<CollectionPage> {
       return [];
     }
   }
+
+  void fetchHouseDetails(BuildContext context, String hid) async {
+    final response =
+        await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
+
+    if (response.statusCode == 200) {
+      final houseDetails = json.decode(response.body);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HouseDetailPage(houseDetails: houseDetails),
+        ),
+      );
+    } else {
+      print(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load house details')),
+      );
+    }
+  } 
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +112,7 @@ class _CollectionPageState extends State<CollectionPage> {
                   ),
                   child: GestureDetector(
                     onTap: () {
-                      
+                      fetchHouseDetails(context, house['hid']);
                     },
                     child: Stack(
                       children: [
@@ -118,7 +140,7 @@ class _CollectionPageState extends State<CollectionPage> {
                                       height: double.infinity,
                                       errorBuilder: (context, error, stackTrace) {
                                         return Image.asset(
-                                          'assets/Logo.png', // 替換為你本地的預設圖片
+                                          'assets/Logo.png', 
                                           fit: BoxFit.cover,
                                           width: MediaQuery.of(context).size.width *
                                               0.35,

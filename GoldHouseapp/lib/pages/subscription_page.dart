@@ -14,8 +14,9 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<Map<String, dynamic>> subscriptions = [];
 
-  Future<void> _fetchProperties(Map<String, dynamic> subscription, int index) async {
-    int? subscriptionId = subscriptions[index]['subscription_id'];  
+  Future<void> _fetchProperties(
+      Map<String, dynamic> subscription, int index) async {
+    int? subscriptionId = subscriptions[index]['subscription_id'];
 
     if (subscriptionId == null) {
       print('Subscription ID not found');
@@ -27,7 +28,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         ...subscription,
-        'subscription_id': subscriptionId,  
+        'subscription_id': subscriptionId,
       }),
     );
 
@@ -43,6 +44,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Future<void> _saveSubscriptions() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+
     List<String> subscriptionList =
         subscriptions.map((sub) => json.encode(sub)).toList();
     await prefs.setStringList('subscriptions', subscriptionList);
@@ -50,20 +52,39 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Future<void> _loadSubscriptions() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? subscriptionList = prefs.getStringList('subscriptions');
-    if (subscriptionList != null) {
-      setState(() {
-        subscriptions = subscriptionList
-            .map((sub) => json.decode(sub) as Map<String, dynamic>)
-            .toList();
-      });
+    int? memberId = prefs.getInt('member_id');
+
+    if (memberId == null) {
+      print('Member ID not found');
+      return;
     }
 
-    int? memberId = prefs.getInt('member_id');
-    if (memberId != null) {
-      print('Member ID: $memberId');
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/get_subscriptions'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'member_id': memberId}),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      print('Received data: $data');
+      setState(() {
+        subscriptions = data
+            .map((item) => {
+                  'subscription_id': item['subscription_id'],
+                  'city': item['city'],
+                  'district': List<String>.from(item['district']),
+                  'pattern': List<String>.from(item['pattern']),
+                  'rentalrange': item['rentalrange'],
+                  'roomcount': item['roomcount'],
+                  'size': item['size'],
+                  'type': List<String>.from(item['type']),
+                  'properties': [],
+                })
+            .toList();
+      });
     } else {
-      print('Member ID not found');
+      print('Failed to fetch subscriptions');
     }
   }
 
@@ -92,8 +113,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         'subscription_time': subscriptionTime,
       }, subscriptions.length - 1);
       await _saveSubscriptions();
-
-     
     } else {
       print('Failed to add subscription');
     }
@@ -130,7 +149,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       print('Failed to update last check time');
     }
   }
-  
+
   @override
   void initState() {
     super.initState();
@@ -200,7 +219,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 : ListView.builder(
                     itemCount: subscriptions.length,
                     itemBuilder: (context, index) {
-                      final subscription = subscriptions[index]['subscription'];
+                      final subscription = subscriptions[index];
                       return Container(
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(20),
@@ -231,7 +250,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 children: [
                                   Text(
                                     '${subscription['city']} ${(subscription['district'] == null || subscription['district'].isEmpty) ? '' : subscription['district'].join(', ')}',
-
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                     style: const TextStyle(
@@ -241,7 +259,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   ),
                                   Text(
                                     style: TextStyle(fontSize: 16),
-                                    '類型：${subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['types'].isEmpty ? '不限' : subscription['types'].join(', ')}',
+                                    '類型：${subscription['pattern'] == null || subscription['pattern'].isEmpty ? '不限' : subscription['pattern'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['type'] == null || subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')}',
                                   ),
                                 ],
                               ),
@@ -252,22 +270,27 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 },
                               ),
                               onTap: () async {
-                                int? subscriptionId = subscriptions[index]['subscription_id']; 
+                                int? subscriptionId =
+                                    subscription['subscription_id'];
                                 if (subscriptionId != null) {
-                                  await _fetchProperties(subscriptions[index]['subscription'], index);
-                                  Navigator.of(context).push(
+                                  await _fetchProperties(subscription, index);
+                                  Navigator.of(context)
+                                      .push(
                                     MaterialPageRoute(
                                       builder: (context) => PropertyDetailsPage(
-                                        properties: subscriptions[index]['properties'],
-                                        subscription: subscriptions[index]['subscription'],
-                                        subscriptionId: subscriptionId,  
-                                        onReturn: _updateLastCheckTime,  
+                                        properties: subscription['properties'],
+                                        subscription: subscription,
+                                        subscriptionId: subscriptionId,
+                                        onReturn: _updateLastCheckTime,
                                       ),
                                     ),
-                                  ).then((_) async {
+                                  )
+                                      .then((_) async {
                                     await _updateLastCheckTime(subscriptionId);
-                                    SharedPreferences prefs = await SharedPreferences.getInstance();
-                                    prefs.setString('last_check_time', DateTime.now().toUtc().toString());
+                                    SharedPreferences prefs =
+                                        await SharedPreferences.getInstance();
+                                    prefs.setString('last_check_time',
+                                        DateTime.now().toUtc().toString());
                                   });
                                 } else {
                                   print('subscription_id is null');
@@ -302,7 +325,45 @@ class PropertyDetailsPage extends StatelessWidget {
   void _handlePop(bool value) {
     onReturn(subscriptionId);
   }
-  
+
+  void fetchHouseDetails(BuildContext context, String hid) async {
+    final response =
+        await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
+
+    if (response.statusCode == 200) {
+      final houseDetails = json.decode(response.body);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateHouseDetailPage(houseData: houseDetails),
+        ),
+      );
+    } else {
+      print(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load house details')),
+      );
+    }
+  }
+
+  void clickrecord(int memberId, String hid) async {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000//record_click'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'member_id': memberId,
+        'hid': hid,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Click recorded successfully');
+    } else {
+      print('Failed to record click: ${response.body}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +391,16 @@ class PropertyDetailsPage extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final property = properties[index];
                   return GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      int? memberId = prefs.getInt('member_id');
+
+                      if (memberId != null) {
+                        clickrecord(memberId, property['hid']);
+                      }
+
+                      fetchHouseDetails(context, property['hid']);
                     },
                     child: Container(
                       width: MediaQuery.of(context).size.width,
@@ -372,8 +442,8 @@ class PropertyDetailsPage extends StatelessWidget {
                                   child: Image.network(
                                     property['imageUrl'] ?? 'assets/Logo.png',
                                     fit: BoxFit.cover,
-                                    width:
-                                        MediaQuery.of(context).size.width * 0.35,
+                                    width: MediaQuery.of(context).size.width *
+                                        0.35,
                                     height: double.infinity,
                                     errorBuilder: (context, error, stackTrace) {
                                       return Image(
@@ -391,7 +461,7 @@ class PropertyDetailsPage extends StatelessWidget {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          '${property['type']} | ${property['title']}',
+                                          '${property['pattern']} | ${property['title']}',
                                           style: const TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.bold,
@@ -459,16 +529,16 @@ class AddSubscriptionPage extends StatefulWidget {
 }
 
 class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
-  String _selectedCity = '台北市';
+  String _selectedCity = '臺北市';
   List<String> _selectedAreas = [];
-  List<String> cities = ['台北市', '新北市', '台中市'];
+  List<String> cities = ['臺北市', '新北市', '台中市'];
   Map<String, List<String>> cityDistricts = {
-    '台北市': ['中正區', '大同區', '大安區', '士林區', '萬華區'],
+    '臺北市': ['中正區', '大同區', '大安區', '士林區', '萬華區'],
     '新北市': ['板橋區', '新店區', '中和區'],
     '台中市': ['北屯區', '西屯區', '南屯區'],
   };
   List<String> _selectedtype = [];
-  List<String> housetype = ['整層住家', '獨立套房', '分租套房', '雅房'];
+  List<String> pattern = ['整層住家', '獨立套房', '分租套房', '雅房'];
   String _selectedRentalRange = '不限';
   List<String> rentalRange = [
     '不限',
@@ -625,18 +695,18 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                   ),
                   Expanded(
                     child: ListView(
-                      children: housetype
-                          .map((type) => CheckboxListTile(
-                                title: Text(type),
-                                value: selectedTemp.contains(type) &&
+                      children: pattern
+                          .map((pattern) => CheckboxListTile(
+                                title: Text(pattern),
+                                value: selectedTemp.contains(pattern) &&
                                     selectedTemp.isNotEmpty,
                                 onChanged: (bool? selected) {
                                   setState(() {
                                     if (selected == true) {
                                       selectedTemp.remove('不限');
-                                      selectedTemp.add(type);
+                                      selectedTemp.add(pattern);
                                     } else {
-                                      selectedTemp.remove(type);
+                                      selectedTemp.remove(pattern);
                                     }
                                   });
                                 },
@@ -885,17 +955,17 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                     Expanded(
                       child: ListView(
                         children: houseTypes
-                            .map((types) => CheckboxListTile(
-                                  title: Text(types),
-                                  value: selectedTemp.contains(types) &&
+                            .map((type) => CheckboxListTile(
+                                  title: Text(type),
+                                  value: selectedTemp.contains(type) &&
                                       selectedTemp.isNotEmpty,
                                   onChanged: (bool? selected) {
                                     setState(() {
                                       if (selected == true) {
                                         selectedTemp.remove('不限');
-                                        selectedTemp.add(types);
+                                        selectedTemp.add(type);
                                       } else {
-                                        selectedTemp.remove(types);
+                                        selectedTemp.remove(type);
                                       }
                                     });
                                   },
@@ -1098,35 +1168,36 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               height: 20,
             ),
             ElevatedButton(
-  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF613F26)),
-  onPressed: () async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? memberid = prefs.getInt('member_id');
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF613F26)),
+              onPressed: () async {
+                SharedPreferences prefs = await SharedPreferences.getInstance();
+                int? memberid = prefs.getInt('member_id');
 
-    if (memberid == null) {
-      print('Member ID not found');
-      return;
-    }
+                if (memberid == null) {
+                  print('Member ID not found');
+                  return;
+                }
 
-    Map<String, dynamic> subscriptionData = {
-      'member_id': memberid,
-      'city': _selectedCity,
-      'district': _selectedAreas.isEmpty ? ['不限'] : _selectedAreas,
-      'type': _selectedtype.isEmpty ? ['不限'] : _selectedtype,
-      'rentalrange': _selectedRentalRange,
-      'roomcount': _selectedRoomCount,
-      'size': _selectedHouseSize,
-      'types': _selectedTypes.isEmpty ? ['不限'] : _selectedTypes,
-    };
+                Map<String, dynamic> subscriptionData = {
+                  'member_id': memberid,
+                  'city': _selectedCity,
+                  'district': _selectedAreas.isEmpty ? ['不限'] : _selectedAreas,
+                  'pattern': _selectedtype.isEmpty ? ['不限'] : _selectedtype,
+                  'rentalrange': _selectedRentalRange,
+                  'roomcount': _selectedRoomCount,
+                  'size': _selectedHouseSize,
+                  'type': _selectedTypes.isEmpty ? ['不限'] : _selectedTypes,
+                };
 
-    widget.onSubmit(subscriptionData);
-    Navigator.pop(context);
-  },
-  child: const Text(
-    '新增訂閱',
-    style: TextStyle(color: Colors.white, fontSize: 18),
-  ),
-)
+                widget.onSubmit(subscriptionData);
+                Navigator.pop(context);
+              },
+              child: const Text(
+                '新增訂閱',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            )
           ],
         ),
       ),

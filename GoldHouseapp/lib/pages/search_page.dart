@@ -84,6 +84,25 @@ class _SearchResultPageState extends State<SearchResultPage> {
   late ScrollController _scrollController;
   bool _isLoading = false;
 
+  void clickrecord(int memberId, String hid) async {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000//record_click'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'member_id': memberId,
+        'hid': hid,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print('Click recorded successfully');
+    } else {
+      print('Failed to record click: ${response.body}');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -160,7 +179,6 @@ class _SearchResultPageState extends State<SearchResultPage> {
           _displayResults[index]['isFavorite'] =
               !_displayResults[index]['isFavorite'];
         });
-        
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('收藏失敗')),
@@ -230,7 +248,15 @@ class _SearchResultPageState extends State<SearchResultPage> {
                     ],
                   ),
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      int? memberId = prefs.getInt('member_id');
+
+                      if (memberId != null) {
+                        clickrecord(memberId, result['hid']);
+                      }
+
                       fetchHouseDetails(context, result['hid']);
                     },
                     child: Stack(
@@ -926,7 +952,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
 
 class CityPage extends StatelessWidget {
   final List<String> cities = [
-    '台北市',
+    '臺北市',
     '新北市',
     '基隆市',
     '宜蘭縣',
@@ -1002,7 +1028,7 @@ class DistrictPage extends StatefulWidget {
 
 class _DistrictPageState extends State<DistrictPage> {
   final Map<String, List<String>> cityDistricts = {
-    '台北市': ['不限', '中正區', '萬華區', '中山區', '大同區', '士林區'],
+    '臺北市': ['不限', '中正區', '萬華區', '中山區', '大同區', '士林區'],
     '新北市': ['不限', '板橋區', '中和區', '永和區'],
     '高雄市': ['不限', '三民區', '鼓山區', '苓雅區'],
   };
