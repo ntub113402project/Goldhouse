@@ -15,11 +15,11 @@ import re
 # 設定 OpenAI API 金鑰
 openai.api_key = "" 
 
-#Line Bot API
+# Line Bot API
 line_bot_api = LineBotApi('oohH26PwqEwNLSTT9fQJ9DdqfBXd63TnFNVWb32ZuzL6wLsYJx09guQOh2KUCKEmXUpCKu4dbAu6hA5b4A4JoBS57j202fZ/zl2BFjjKVAVkujU9wTy+zdBddBDrnNdDCGnRkR5pOFThPFEyoIGAggdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('3d91af865d2568e735554c9c99b8cb01')
 
-#ngrok
+# ngrok
 ngrok.set_auth_token("2kSMB4R877gUNnX5eO2VhtLd9qx_7jg36onQ9bnn6YjMgfYdG")
 
 # 斷開任何現有的隧道
@@ -46,7 +46,7 @@ def gpt_analyze_input(message, user_id):
     try:
         # 專業系統消息
         system_message = (
-            "你是一個專業的房屋中介助手，負責回答租屋相關問題。"
+            "你是一個專業的房屋中介助手，負責回答租屋相關問題，且一律用繁體中文回答。"
             "你的回答應該簡潔、明確，直接解答用戶的問題。"
             "當用戶問到關於房屋的具體細節（例如價格、位置、設施等）時，請根據房屋的主頁資訊進行回答。"
             "如果用戶詢問的問題在房屋的主頁中沒有答案，請建議用戶聯繫房東以獲取更多資訊。"
@@ -62,7 +62,7 @@ def gpt_analyze_input(message, user_id):
             # 如果用戶詢問租屋相關知識
             prompt = (
                 f"User message: {message}\n\n"
-                "Based on the information from this website 'https://www.dd-room.com/article/611e1d8ef0e5483bb5447b3b', provide a precise and professional response."
+                "根據這個網站提供的信息『https://www.dd-room.com/article/611e1d8ef0e5483bb5447b3b』，給出準確且專業的回應。"
             )
         else:
             # 如果用戶詢問房屋的具體信息
@@ -70,7 +70,7 @@ def gpt_analyze_input(message, user_id):
             prompt = (
                 f"Based on the provided JSON data:\n{json_str}\n\n"
                 f"User message: {message}\n\n"
-                "Provide a precise and professional response based on the user's question and the data provided. If the data is insufficient to answer, advise the user to contact the landlord."
+                "根據用戶的問題和提供的數據，給出準確且專業的回應。如果數據不足以回答，建議用戶聯繫房東。"
             )
 
         # 調用 OpenAI API 生成回應
@@ -109,25 +109,25 @@ def handle_message(event):
 
     print("Received message:", user_message)  # 打印接收到的消息
 
-    # 檢查用戶狀態
-    if user_id in user_states and user_states[user_id]['user_valid']:
-        # 如果用戶已驗證，處理他們的問題
-        response_message = gpt_analyze_input(user_message, user_id)
+    # 檢查消息是否為正確的登錄格式
+    pattern = re.compile(r'^member_id:\s*(\d+)\s+hid:\s*(\d+)$')
+    match = pattern.match(user_message)
+
+    if match:
+        member_id, hid = match.groups()  # 提取匹配的 member_id 和 hid
+        # 更新用戶狀態，重置對話
+        user_states[user_id] = {
+            'user_valid': True,
+            'member_id': member_id,
+            'hid': hid,
+            'messages': []  # 重置對話信息
+        }
+        response_message = f"驗證成功，使用者您好，您可以訊問有關 {hid} 這筆物件的任何問題，我會盡可能回覆您。"
     else:
-        # 檢查消息是否為正確的登錄格式
-        pattern = re.compile(r'^member_id:\s*(\d+)\s+hid:\s*(\d+)$')
-        match = pattern.match(user_message)
-        
-        if match:
-            member_id, hid = match.groups()  # 提取匹配的 member_id 和 hid
-            # 更新用戶狀態，重置對話
-            user_states[user_id] = {
-                'user_valid': True,
-                'member_id': member_id,
-                'hid': hid,
-                'messages': []  # 重置對話信息
-            }
-            response_message = f"驗證成功，使用者您好，您可以訊問有關 {hid} 這筆物件的任何問題，我會盡可能回覆您。"
+        # 檢查用戶狀態
+        if user_id in user_states and user_states[user_id]['user_valid']:
+            # 如果用戶已驗證，處理他們的問題
+            response_message = gpt_analyze_input(user_message, user_id)
         else:
             response_message = "您提供的登入格式有誤, 請重新驗證"
 
