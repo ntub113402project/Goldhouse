@@ -161,7 +161,7 @@ def handle_message(event):
     print("Received message:", user_message)  # 打印接收到的消息
 
     # 檢查消息是否為正確的登錄格式
-    pattern = re.compile(r'^member_id:\s*(\d+)\s+hid:\s*(\d+)$')
+    pattern = re.compile(r'hid:\s*(\d+)$')
     match = pattern.match(user_message)
 
     if match:
