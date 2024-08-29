@@ -1,3 +1,7 @@
+#pip install openai==0.28
+#pip install line-bot-sdk
+#pip install pyngrok
+#pip install Flask-Session
 from pyngrok import ngrok
 import openai
 from flask import Flask, request, abort
@@ -105,7 +109,7 @@ def gpt_analyze_input(message, user_id):
             # 如果用戶詢問房屋的具體信息
             hid = user_states[user_id]['hid']
             description = generate_description(hid)
-            if "未找到與該HID相關的房屋資料" in description:
+            if "您提供的房屋HID有誤, 請重新輸入" in description:
                 return description
             prompt = (
                 f"以下是房屋的相關資訊：\n{description}\n\n"
@@ -122,11 +126,18 @@ def gpt_analyze_input(message, user_id):
             ]
         )
 
-        return response['choices'][0]['message']['content']
+        reply_content = response['choices'][0]['message']['content']
+
+        # 添加「根據您所要搜尋的房屋資訊」到回應開頭（僅當查詢房屋信息時）
+        if "租屋知識" not in message and "租屋相關" not in message:
+            reply_content = "根據您所要搜尋的房屋資訊，" + reply_content
+
+        return reply_content
 
     except Exception as e:
         print(f"Error occurred: {e}")  # 打印錯誤信息
         return "在處理您的請求時發生錯誤。"
+
 
 # Linebot 回調
 @app.route("/callback", methods=['POST'])
