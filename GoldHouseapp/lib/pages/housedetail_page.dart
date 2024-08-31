@@ -45,7 +45,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
     );
 
     if (response.statusCode == 200) {
-      String message = "member_id: $memberId\nhid:$hid";
+      String message = "hid:$hid";
       String encodedMessage = Uri.encodeComponent(message);
       
       final url = Uri.parse("https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
@@ -96,7 +96,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
             ),
             const SizedBox(height: 15),
             Text(
-              widget.houseDetails['description'],
+              widget.houseDetails['content'],
               style: const TextStyle(fontSize: 18),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
@@ -133,7 +133,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
             padding: const EdgeInsets.all(50),
             child: SingleChildScrollView(
               child: Text(
-                widget.houseDetails['description'],
+                widget.houseDetails['content'],
                 style: const TextStyle(fontSize: 20),
               ),
             ));
@@ -502,7 +502,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
     );
 
     if (response.statusCode == 200) {
-      String message = "member_id: $memberId\nhid:$hid";
+      String message = "hid:$hid";
       String encodedMessage = Uri.encodeComponent(message);
       
       final url = Uri.parse("https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
@@ -522,10 +522,11 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
   }
 }
   @override
-  void initState() {
-    super.initState();
-    selectedHouse = widget.houseData;
-  }
+void initState() {
+  super.initState();
+  selectedHouse = widget.houseData;
+  print("houseData: ${widget.houseData}");
+}
   
 
   Widget _buildIntroduce() {
@@ -571,7 +572,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
             ),
             const SizedBox(height: 15),
             Text(
-              widget.houseData['description'],
+              widget.houseData['content'],
               style: const TextStyle(fontSize: 18),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
@@ -608,7 +609,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
             padding: const EdgeInsets.all(50),
             child: SingleChildScrollView(
               child: Text(
-                widget.houseData['description'],
+                widget.houseData['content'],
                 style: const TextStyle(fontSize: 20),
               ),
             ));
@@ -809,7 +810,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                         width: 10,
                       ),
                       Text(
-                        widget.houseData['chargecontain'].join('|'),
+                        widget.houseData['pricecontain'].join('|'),
                         style: const TextStyle(
                           fontSize: 16,
                           color: Color(0xFFD1C0C0),
@@ -820,7 +821,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                   Column(
                     children: [
                       Text(
-                        '${widget.houseData['charge']} 元/月',
+                        '${widget.houseData['price']} 元/月',
                         style: const TextStyle(
                           color: Color(0xFFE40A0A),
                           fontSize: 20,

@@ -56,6 +56,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     if (memberId == null) {
       print('Member ID not found');
+      setState(() {
+      subscriptions = [];  
+    });
       return;
     }
 

@@ -256,7 +256,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                     child: Row(
                                       children: [
                                         Text(
-                                          '${createhouses[index]['charge']}',
+                                          '${createhouses[index]['price']}',
                                           style: const TextStyle(
                                             color: Color.fromARGB(
                                                 255, 249, 58, 58),
@@ -366,20 +366,20 @@ class _AddPageState extends State<AddPage> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController chargeController = TextEditingController();
+  final TextEditingController contentController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
   final TextEditingController atfloorController = TextEditingController();
   final TextEditingController allfloorController = TextEditingController();
   final TextEditingController sizeController = TextEditingController();
   final TextEditingController lessornameController = TextEditingController();
-  final TextEditingController lessorphoneController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
   List<XFile>? _imageFileList = [];
   String _selectedCity = '未選擇';
   String? _selectedArea = '未選擇';
   bool _isAreaVisible = false;
   String? _selectedpattern = '未選擇';
-  List<String> _selectedchargecontain = [];
+  List<String> _selectedpricecontain = [];
   List<String> _selectedservice = [];
   String? _seletedtype = '未選擇';
   String? _selecteddeposit = '未選擇';
@@ -391,7 +391,7 @@ class _AddPageState extends State<AddPage> {
   };
   List<String> pattern = ['整層住家', '獨立套房', '分租套房', '雅房'];
   List<String> lessortype = ['屋主', '房仲'];
-  List<String> chargecontain = ['水費', '電費', '管理費', '停車費'];
+  List<String> pricecontain = ['水費', '電費', '管理費', '停車費'];
   List<String> service = [
     '冰箱',
     '洗衣機',
@@ -501,9 +501,9 @@ class _AddPageState extends State<AddPage> {
     request.fields['district'] = _selectedArea ?? '未選擇';
     request.fields['title'] = titleController.text;
     request.fields['address'] = addressController.text;
-    request.fields['description'] = descriptionController.text;
-    request.fields['charge'] = chargeController.text;
-    request.fields['chargecontain'] = jsonEncode(_selectedchargecontain);
+    request.fields['content'] = contentController.text;
+    request.fields['price'] = priceController.text;
+    request.fields['pricecontain'] = jsonEncode(_selectedpricecontain);
     request.fields['deposit'] = _selecteddeposit ?? '未選擇';
     request.fields['pattern'] = _selectedpattern ?? '未選擇';
     request.fields['atfloor'] = atfloorController.text;
@@ -518,7 +518,7 @@ class _AddPageState extends State<AddPage> {
         _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限');
     request.fields['lessorname'] = lessornameController.text;
     request.fields['lessorgender'] = _lessorgender == 0 ? '先生' : '小姐';
-    request.fields['lessorphone'] = lessorphoneController.text;
+    request.fields['phone'] = phoneController.text;
 
     for (var imageFile in _imageFileList!) {
       request.files.add(await http.MultipartFile.fromPath(
@@ -549,9 +549,9 @@ class _AddPageState extends State<AddPage> {
           'district': _selectedArea,
           'title': titleController.text,
           'address': addressController.text,
-          'description': descriptionController.text,
-          'charge': chargeController.text,
-          'chargecontain': _selectedchargecontain,
+          'content': contentController.text,
+          'price': priceController.text,
+          'pricecontain': _selectedpricecontain,
           'deposit': _selecteddeposit,
           'pattern': _selectedpattern,
           'atfloor': atfloorController.text,
@@ -566,7 +566,7 @@ class _AddPageState extends State<AddPage> {
               _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限'),
           'lessorname': lessornameController.text,
           'lessorgender': _lessorgender == 0 ? '先生' : '小姐',
-          'lessorphone': lessorphoneController.text,
+          'phone': phoneController.text,
           'image': _imageFileList!.map((xFile) => xFile.path).toList(),
         };
 
@@ -762,7 +762,7 @@ class _AddPageState extends State<AddPage> {
               ),
               const SizedBox(height: 10),
               TextFormField(
-                controller: descriptionController,
+                controller: contentController,
                 decoration: const InputDecoration(
                   suffixIcon: Icon(Icons.create_rounded),
                   labelText: '房屋描述',
@@ -788,7 +788,7 @@ class _AddPageState extends State<AddPage> {
               ),
               const SizedBox(height: 10),
               TextFormField(
-                controller: chargeController,
+                controller: priceController,
                 decoration: const InputDecoration(
                   suffixIcon: Icon(Icons.create_rounded),
                   suffixText: '元/月',
@@ -816,12 +816,12 @@ class _AddPageState extends State<AddPage> {
                 height: 10,
               ),
               _buildListTile('租金包含', () async {
-                List<String>? selectedchargecontain =
+                List<String>? selectedpricecontain =
                     await showModalBottomSheet<List<String>>(
                   context: context,
                   builder: (BuildContext context) {
                     final selectedTemp =
-                        List<String>.from(_selectedchargecontain);
+                        List<String>.from(_selectedpricecontain);
                     return StatefulBuilder(
                       builder: (BuildContext context, StateSetter setState) {
                         return Padding(
@@ -847,7 +847,7 @@ class _AddPageState extends State<AddPage> {
                                 ),
                                 Expanded(
                                   child: ListView(
-                                    children: chargecontain
+                                    children: pricecontain
                                         .map((contain) => CheckboxListTile(
                                               title: Text(contain),
                                               value: selectedTemp
@@ -889,14 +889,14 @@ class _AddPageState extends State<AddPage> {
                   },
                 );
 
-                if (selectedchargecontain != null) {
+                if (selectedpricecontain != null) {
                   setState(() {
-                    _selectedchargecontain = selectedchargecontain;
+                    _selectedpricecontain = selectedpricecontain;
                   });
                 }
               },
-                  trailingText: _selectedchargecontain.isNotEmpty
-                      ? _selectedchargecontain.join(',')
+                  trailingText: _selectedpricecontain.isNotEmpty
+                      ? _selectedpricecontain.join(',')
                       : '無'),
               const SizedBox(
                 height: 10,
@@ -1427,7 +1427,7 @@ class _AddPageState extends State<AddPage> {
                 height: 10,
               ),
               TextFormField(
-                controller: lessorphoneController,
+                controller: phoneController,
                 decoration: const InputDecoration(
                   suffixIcon: Icon(Icons.create_rounded),
                   labelText: '連絡電話',
@@ -1578,20 +1578,20 @@ class _EditHousePageState extends State<EditHousePage> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
-  final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController chargeController = TextEditingController();
+  final TextEditingController contentController = TextEditingController();
+  final TextEditingController priceController = TextEditingController();
   final TextEditingController atfloorController = TextEditingController();
   final TextEditingController allfloorController = TextEditingController();
   final TextEditingController sizeController = TextEditingController();
   final TextEditingController lessornameController = TextEditingController();
-  final TextEditingController lessorphoneController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
 
   List<XFile>? _imageFileList = [];
   String? _selectedCity;
   String? _selectedArea;
   bool _isAreaVisible = false;
   String? _selectedpattern;
-  List<String> _selectedchargecontain = [];
+  List<String> _selectedpricecontain = [];
   List<String> _selectedservice = [];
   String? _seletedtype;
   String? _selecteddeposit;
@@ -1610,21 +1610,21 @@ class _EditHousePageState extends State<EditHousePage> {
 
     addressController.text = widget.houseData['address'];
     titleController.text = widget.houseData['title'];
-    descriptionController.text = widget.houseData['description'];
-    chargeController.text = widget.houseData['charge'];
+    contentController.text = widget.houseData['content'];
+    priceController.text = widget.houseData['price'];
     atfloorController.text = widget.houseData['atfloor'];
     allfloorController.text = widget.houseData['allfloor'];
     sizeController.text = widget.houseData['size'];
     lessornameController.text = widget.houseData['lessorname'];
-    lessorphoneController.text = widget.houseData['lessorphone'];
+    phoneController.text = widget.houseData['phone'];
 
     _selectedCity = widget.houseData['city'];
     _selectedArea = widget.houseData['district'];
     _isAreaVisible = _selectedArea != null;
     _selectedpattern = widget.houseData['pattern'];
-    _selectedchargecontain = widget.houseData['chargecontain'] is String
-        ? [widget.houseData['chargecontain']]
-        : List<String>.from(widget.houseData['chargecontain']);
+    _selectedpricecontain = widget.houseData['pricecontain'] is String
+        ? [widget.houseData['pricecontain']]
+        : List<String>.from(widget.houseData['pricecontain']);
 
     _selectedservice = widget.houseData['service'] is String
         ? [widget.houseData['service']]
@@ -1677,7 +1677,7 @@ class _EditHousePageState extends State<EditHousePage> {
 
     _changedFields.forEach((key, value) {
       if (key != 'images') {
-        if (key == 'chargecontain' || key == 'service') {
+        if (key == 'pricecontain' || key == 'service') {
           request.fields[key] = value.join(',');
         } else {
           request.fields[key] = value.toString();
@@ -1891,7 +1891,7 @@ class _EditHousePageState extends State<EditHousePage> {
               ),
               const SizedBox(height: 10),
               TextFormField(
-                controller: descriptionController,
+                controller: contentController,
                 decoration: const InputDecoration(
                   suffixIcon: Icon(Icons.create_rounded),
                   labelText: '房屋描述',
@@ -1912,12 +1912,12 @@ class _EditHousePageState extends State<EditHousePage> {
                 ),
                 maxLines: null,
                 onChanged: (value) {
-                  _onFieldChanged('description', value);
+                  _onFieldChanged('content', value);
                 },
               ),
               const SizedBox(height: 10),
               TextFormField(
-                controller: chargeController,
+                controller: priceController,
                 decoration: const InputDecoration(
                   suffixIcon: Icon(Icons.create_rounded),
                   suffixText: '元/月',
@@ -1938,19 +1938,19 @@ class _EditHousePageState extends State<EditHousePage> {
                   ),
                 ),
                 onChanged: (value) {
-                  _onFieldChanged('charge', value);
+                  _onFieldChanged('price', value);
                 },
               ),
               const SizedBox(
                 height: 10,
               ),
               _buildListTile('租金包含', () async {
-                List<String>? selectedchargecontain =
+                List<String>? selectedpricecontain =
                     await showModalBottomSheet<List<String>>(
                   context: context,
                   builder: (BuildContext context) {
                     final selectedTemp =
-                        List<String>.from(_selectedchargecontain);
+                        List<String>.from(_selectedpricecontain);
                     return StatefulBuilder(
                       builder: (BuildContext context, StateSetter setState) {
                         return Padding(
@@ -2018,15 +2018,15 @@ class _EditHousePageState extends State<EditHousePage> {
                   },
                 );
 
-                if (selectedchargecontain != null) {
+                if (selectedpricecontain != null) {
                   setState(() {
-                    _selectedchargecontain = selectedchargecontain;
-                    _onFieldChanged('chargecontain', _selectedchargecontain);
+                    _selectedpricecontain = selectedpricecontain;
+                    _onFieldChanged('pricecontain', _selectedpricecontain);
                   });
                 }
               },
-                  trailingText: _selectedchargecontain.isNotEmpty
-                      ? _selectedchargecontain.join(',')
+                  trailingText: _selectedpricecontain.isNotEmpty
+                      ? _selectedpricecontain.join(',')
                       : '無'),
               const SizedBox(
                 height: 10,
@@ -2655,7 +2655,7 @@ class _EditHousePageState extends State<EditHousePage> {
                 height: 10,
               ),
               TextFormField(
-                controller: lessorphoneController,
+                controller: phoneController,
                 decoration: const InputDecoration(
                   suffixIcon: Icon(Icons.create_rounded),
                   labelText: '連絡電話',
@@ -2675,7 +2675,7 @@ class _EditHousePageState extends State<EditHousePage> {
                   ),
                 ),
                 onChanged: (value) {
-                  _onFieldChanged('lessorphone', value);
+                  _onFieldChanged('phone', value);
                 },
               ),
               SizedBox(
