@@ -188,25 +188,41 @@ def find_houses_by_criteria(message):
         if type_:
             query += f" AND h.type CONTAINS '{type_}'"
 
-        # 根據地鐵或公交篩選最近的十個結果
-        if subway or bus:
-            query += " WITH h ORDER BY h.subway, h.bus LIMIT 10"
-        else:
-            query += " RETURN h.hid AS hid LIMIT 10"
+        query += " RETURN h.hid AS hid, h.subway AS subway, h.bus AS bus"
 
         # 執行查詢
         results = graph.run(query).data()
 
-        if results:
-            hids = [result['hid'] for result in results]
-            hids_list = "\n".join(hids)  # 將所有 HID 換行顯示
-            return f"根據您的需求，以下房子較符合您的條件：\n{hids_list}"
+        def extract_distance(text):
+            """從字串中提取數字，如果沒有數字則返回無窮大"""
+            if text:
+                match = re.search(r'(\d+)', text)
+                if match:
+                    return int(match.group(1))
+            return float('inf')
+
+        # 處理並排序結果
+        house_distances = []
+        for result in results:
+            subway_distance = extract_distance(result['subway'])
+            bus_distance = extract_distance(result['bus'])
+            total_distance = subway_distance + bus_distance
+            house_distances.append((result['hid'], total_distance))
+
+        # 按距離排序並選擇最小的十個結果
+        house_distances.sort(key=lambda x: x[1])
+        top_houses = house_distances[:10]
+
+        if top_houses:
+            hids_list = "\n".join([f"{i+1}. 編號 {hid}" for i, (hid, _) in enumerate(top_houses)])
+            return f"根據您的需求，以下房子較符合您的條件：\n{hids_list}如都無符合您的需求，請使用APP內的搜尋"
         else:
             return "沒有符合您描述的房子。"
 
     except Exception as e:
         print(f"Error occurred: {e}")  # 打印錯誤信息
         return "在處理您的請求時發生錯誤。"
+
 
 # Linebot 回調
 @app.route("/callback", methods=['POST'])
