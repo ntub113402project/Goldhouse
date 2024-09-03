@@ -246,7 +246,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                   const Color.fromARGB(0, 255, 255, 255),
                             ),
                             child: ListTile(
-                              contentPadding: EdgeInsets.symmetric(
+                              contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
                               title: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,7 +516,7 @@ class PropertyDetailsPage extends StatelessWidget {
                     ),
                   );
                 },
-              ),
+              ),                        
       ),
     );
   }

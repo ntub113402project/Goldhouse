@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'dart:io';
 import 'class.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -619,11 +618,14 @@ void initState() {
 
   @override
   Widget build(BuildContext context) {
-    List<String> imageUrls = widget.houseData['image'] != null
-        ? List<String>.from(widget.houseData['image'])
-        : [];
-    List<Widget> allImages = imageUrls
-        .map((url) => Image.file(File(url), fit: BoxFit.fitHeight, width: 1000))
+    List<String> imageUrlList =
+        List<String>.from(widget.houseData['imageUrl']);
+    List<Widget> allImages = imageUrlList
+        .map<Widget>((url) => Image.network(url, fit: BoxFit.fill, width: 1000,
+                errorBuilder: (BuildContext context, Object exception,
+                    StackTrace? stackTrace) {
+              return const Image(image: AssetImage('assets/Logo.png'));
+            }))
         .toList();
 
     return Scaffold(
@@ -648,19 +650,20 @@ void initState() {
             alignment: Alignment.bottomCenter,
             children: <Widget>[
               CarouselSlider(
-                items: allImages,
-                options: CarouselOptions(
-                  autoPlay: true,
-                  enlargeCenterPage: false,
-                  aspectRatio: 1.5,
-                  viewportFraction: 1,
-                  onPageChanged: (index, reason) {
-                    setState(() {
-                      _current = index;
-                    });
-                  },
+                  items: allImages,
+                  options: CarouselOptions(
+                    autoPlay: true,
+                    autoPlayInterval: Duration(seconds: 4),
+                    enlargeCenterPage: false,
+                    aspectRatio: 1.5,
+                    viewportFraction: 1,
+                    onPageChanged: (index, reason) {
+                      setState(() {
+                        _current = index;
+                      });
+                    },
+                  ),
                 ),
-              ),
               Positioned(
                 bottom: 20,
                 child: Row(

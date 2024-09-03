@@ -16,9 +16,37 @@ class _CreateHousePageState extends State<CreateHousePage> {
   int? selectedHouseIndex;
 
   @override
+  @override
   void initState() {
     super.initState();
-    _loadHouses();
+    _fetchHousesFromServer();
+  }
+
+  void _fetchHousesFromServer() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+
+    if (memberId != null) {
+      final response = await http.get(
+          Uri.parse('http://4.227.176.245:5000/houses_by_member/$memberId'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> housesData = json.decode(response.body);
+
+        setState(() {
+          createhouses =
+              housesData.map((house) => house as Map<String, dynamic>).toList();
+        });
+
+        List<String> storedHouses =
+            housesData.map((house) => jsonEncode(house)).toList();
+        await prefs.setStringList('storedHouses', storedHouses);
+      } else {
+        print('Failed to load houses from server');
+      }
+    } else {
+      print('User not logged in');
+    }
   }
 
   void _addHouse(Map<String, dynamic> houseData) async {
@@ -32,19 +60,6 @@ class _CreateHousePageState extends State<CreateHousePage> {
     await prefs.setStringList('storedHouses', storedHouses);
   }
 
-  void _loadHouses() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> storedHouses = prefs.getStringList('storedHouses') ?? [];
-
-    setState(() {
-      createhouses = storedHouses.map((house) {
-        return jsonDecode(house) as Map<String, dynamic>;
-      }).toList();
-    });
-  }
-  
-
-
   void _navigateToAddHousePage() async {
     final houseData = await Navigator.of(context).push(
       MaterialPageRoute(
@@ -53,7 +68,8 @@ class _CreateHousePageState extends State<CreateHousePage> {
     );
 
     if (houseData != null) {
-      _addHouse(houseData);
+      _addHouse(houseData); // 添加新的房屋數據
+      _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
     }
   }
 
@@ -76,17 +92,6 @@ class _CreateHousePageState extends State<CreateHousePage> {
         const SnackBar(content: Text('Failed to load house details')),
       );
     }
-  }
-
-  
-
-  void _updateHouseInStorage(
-      int index, Map<String, dynamic> updatedHouseData) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> storedHouses = prefs.getStringList('storedHouses') ?? [];
-
-    storedHouses[index] = jsonEncode(updatedHouseData);
-    await prefs.setStringList('storedHouses', storedHouses);
   }
 
   void _showOverlay(int index) {
@@ -158,10 +163,14 @@ class _CreateHousePageState extends State<CreateHousePage> {
                     itemCount: createhouses.length,
                     itemBuilder: (context, index) {
                       var house = createhouses[index];
-                      var imagePath =
-                          house['image'] != null && house['image'].isNotEmpty
-                              ? house['image'][0]
-                              : 'assets/Logo.png'; 
+                      var imagePath = (house['images'] is List &&
+                              house['images'].isNotEmpty)
+                          ? house['images'][0]
+                          : 'assets/Logo.png';
+
+                      var imageUrl = imagePath.startsWith('http')
+                          ? imagePath
+                          : 'http://4.227.176.245:5000$imagePath';
                       return Container(
                           width: MediaQuery.of(context).size.width,
                           height: 130,
@@ -197,27 +206,43 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                           MainAxisAlignment.start,
                                       children: [
                                         ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(8),
-                                        bottomLeft: Radius.circular(8),
-                                      ),
-                                      child: Image.file(
-                                        File(imagePath),
-                                        errorBuilder: (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/Logo.png', 
-                                          fit: BoxFit.cover,
-                                          width: MediaQuery.of(context).size.width *
-                                              0.35,
-                                          height: double.infinity,
-                                        );
-                                      },
-                                        fit: BoxFit.cover,
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.35,
-                                        height: double.infinity,
-                                      ),),
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            bottomLeft: Radius.circular(8),
+                                          ),
+                                          child: imageUrl.startsWith('http')
+                                              ? Image.network(
+                                                  imageUrl,
+                                                  errorBuilder: (context, error,
+                                                      stackTrace) {
+                                                    return Image.asset(
+                                                      'assets/Logo.png',
+                                                      fit: BoxFit.cover,
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              0.35,
+                                                      height: double.infinity,
+                                                    );
+                                                  },
+                                                  fit: BoxFit.cover,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.35,
+                                                  height: double.infinity,
+                                                )
+                                              : Image.asset(
+                                                  imageUrl,
+                                                  fit: BoxFit.cover,
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.35,
+                                                  height: double.infinity,
+                                                ),
+                                        ),
                                         Expanded(
                                           child: Padding(
                                             padding: const EdgeInsets.all(8),
@@ -236,7 +261,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  '${createhouses[index]['size']}坪 ${createhouses[index]['city']}${createhouses[index]['district']}',
+                                                  '${createhouses[index]['size']} ${createhouses[index]['city']}${createhouses[index]['district']}',
                                                   style: const TextStyle(
                                                     fontSize: 14,
                                                   ),
@@ -320,13 +345,17 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                               );
 
                                               if (updatedHouseData != null) {
+                                                // 更新房屋數據
                                                 setState(() {
                                                   createhouses[index] =
                                                       updatedHouseData;
-                                                  _updateHouseInStorage(
-                                                      index, updatedHouseData);
                                                 });
+
+                                                // 隱藏覆蓋層
                                                 _hideOverlay();
+
+                                                // 刷新資料列表
+                                                _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
                                               }
                                             },
                                             style: ElevatedButton.styleFrom(
@@ -467,36 +496,39 @@ class _AddPageState extends State<AddPage> {
   }
 
   void _submitData() async {
+    // 提交新增請求
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? memberId = prefs.getInt('member_id');
 
+    // 確保用戶已登入
     if (memberId == null) {
-      // 如果 memberId 为空，提示用户登录
       showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              content: Text('請先登入'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('確認'),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            );
-          });
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Text('請先登入'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('確認'),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          );
+        },
+      );
       return;
     }
+
+    String layer = '${atfloorController.text}F/${allfloorController.text}F';
+    String agency =
+        '${lessornameController.text}${_lessorgender == 0 ? '先生' : '小姐'}';
 
     final uri = Uri.parse('http://4.227.176.245:5000/add_house');
     final request = http.MultipartRequest('POST', uri);
 
-    // 添加 member_id
     request.fields['member_id'] = memberId.toString();
-
-    // 添加其他字段
     request.fields['city'] = _selectedCity;
     request.fields['district'] = _selectedArea ?? '未選擇';
     request.fields['title'] = titleController.text;
@@ -506,8 +538,7 @@ class _AddPageState extends State<AddPage> {
     request.fields['pricecontain'] = jsonEncode(_selectedpricecontain);
     request.fields['deposit'] = _selecteddeposit ?? '未選擇';
     request.fields['pattern'] = _selectedpattern ?? '未選擇';
-    request.fields['atfloor'] = atfloorController.text;
-    request.fields['allfloor'] = allfloorController.text;
+    request.fields['layer'] = layer;
     request.fields['size'] = sizeController.text;
     request.fields['type'] = _seletedtype ?? '未選擇';
     request.fields['service'] = jsonEncode(_selectedservice);
@@ -516,8 +547,7 @@ class _AddPageState extends State<AddPage> {
     request.fields['fire'] = _fire == 0 ? '可' : '不可';
     request.fields['genderlimit'] =
         _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限');
-    request.fields['lessorname'] = lessornameController.text;
-    request.fields['lessorgender'] = _lessorgender == 0 ? '先生' : '小姐';
+    request.fields['agency'] = agency;
     request.fields['phone'] = phoneController.text;
 
     for (var imageFile in _imageFileList!) {
@@ -554,8 +584,7 @@ class _AddPageState extends State<AddPage> {
           'pricecontain': _selectedpricecontain,
           'deposit': _selecteddeposit,
           'pattern': _selectedpattern,
-          'atfloor': atfloorController.text,
-          'allfloor': allfloorController.text,
+          'layer': layer,
           'size': sizeController.text,
           'type': _seletedtype,
           'service': _selectedservice,
@@ -564,13 +593,12 @@ class _AddPageState extends State<AddPage> {
           'fire': _fire == 0 ? '可' : '不可',
           'genderlimit':
               _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限'),
-          'lessorname': lessornameController.text,
-          'lessorgender': _lessorgender == 0 ? '先生' : '小姐',
+          'agency': agency,
           'phone': phoneController.text,
-          'image': _imageFileList!.map((xFile) => xFile.path).toList(),
+          'images': _imageFileList!.map((xFile) => xFile.path).toList(),
         };
 
-        Navigator.of(context).pop(houseData);
+        Navigator.of(context).pop(houseData); // 返回新增的房屋數據
       } else {
         print('Failed to add house: ${response.statusCode}');
       }
@@ -1586,7 +1614,7 @@ class _EditHousePageState extends State<EditHousePage> {
   final TextEditingController lessornameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
 
-  List<XFile>? _imageFileList = [];
+  List<dynamic> _imageFileList = [];
   String? _selectedCity;
   String? _selectedArea;
   bool _isAreaVisible = false;
@@ -1606,17 +1634,20 @@ class _EditHousePageState extends State<EditHousePage> {
   void initState() {
     super.initState();
 
-
-
     addressController.text = widget.houseData['address'];
     titleController.text = widget.houseData['title'];
     contentController.text = widget.houseData['content'];
-    priceController.text = widget.houseData['price'];
-    atfloorController.text = widget.houseData['atfloor'];
-    allfloorController.text = widget.houseData['allfloor'];
-    sizeController.text = widget.houseData['size'];
-    lessornameController.text = widget.houseData['lessorname'];
+    priceController.text = widget.houseData['price'].toString();
+    List<String> layer = widget.houseData['layer'].split('/');
+    atfloorController.text =
+        layer.isNotEmpty ? layer[0].replaceAll('F', '') : '';
+    allfloorController.text =
+        layer.length > 1 ? layer[1].replaceAll('F', '') : '';
+    sizeController.text = widget.houseData['size'].replaceAll('坪', '');
     phoneController.text = widget.houseData['phone'];
+    String agency = widget.houseData['agency'];
+    lessornameController.text = agency.substring(0, agency.length - 2);
+    _lessorgender = agency.endsWith('先生') ? 0 : 1;
 
     _selectedCity = widget.houseData['city'];
     _selectedArea = widget.houseData['district'];
@@ -1637,9 +1668,11 @@ class _EditHousePageState extends State<EditHousePage> {
     _genderlimit = widget.houseData['genderlimit'] == '限男'
         ? 0
         : (widget.houseData['genderlimit'] == '限女' ? 1 : 2);
-    _lessorgender = widget.houseData['lessorgender'] == '先生' ? 0 : 1;
-    _imageFileList =
-        widget.houseData['image'].map<XFile>((path) => XFile(path)).toList();
+    _imageFileList = widget.houseData['images']
+        .map<String>((path) => path is String && path.startsWith('http')
+            ? path
+            : 'http://4.227.176.245:5000' + (path as String))
+        .toList();
   }
 
   void _onFieldChanged(String field, dynamic value) {
@@ -1651,27 +1684,45 @@ class _EditHousePageState extends State<EditHousePage> {
       final List<XFile>? pickedFiles = await _picker.pickMultiImage();
       if (pickedFiles != null) {
         setState(() {
-          _imageFileList!.addAll(pickedFiles);
+          _imageFileList.addAll(pickedFiles.map<String>((xFile) => xFile.path));
         });
-        _onFieldChanged(
-            'images', _imageFileList!.map((xFile) => xFile.path).toList());
+
+        _onFieldChanged('images', _imageFileList);
       }
     } catch (e) {
-      print("图片选择失败：$e");
+      print("圖片選擇失敗：$e");
     }
   }
 
-  void _deleteImage(int index) {
+  List<String> _imagesToDelete = [];
+
+  void _deleteImage(int index) async {
+    final imageToDelete = _imageFileList[index];
+
+    if (imageToDelete is String) {
+      _imagesToDelete.add(imageToDelete);
+    }
+
     setState(() {
-      _imageFileList!.removeAt(index);
+      _imageFileList.removeAt(index);
     });
+
     _onFieldChanged(
-        'images', _imageFileList!.map((xFile) => xFile.path).toList());
+      'images',
+      _imageFileList
+          .map((image) => image is String ? image : (image as XFile).path)
+          .toList(),
+    );
   }
 
   void _submitData() async {
     final uri = Uri.parse('http://4.227.176.245:5000/edit_house');
     final request = http.MultipartRequest('POST', uri);
+
+    _changedFields['layer'] =
+        '${atfloorController.text}F/${allfloorController.text}F';
+    _changedFields['agency'] =
+        '${lessornameController.text}${_lessorgender == 0 ? '先生' : '小姐'}';
 
     request.fields['hid'] = widget.houseData['hid'];
 
@@ -1685,11 +1736,17 @@ class _EditHousePageState extends State<EditHousePage> {
       }
     });
 
-    for (var imageFile in _imageFileList!) {
-      request.files.add(await http.MultipartFile.fromPath(
-        'images',
-        imageFile.path,
-      ));
+    for (var imageFile in _imageFileList) {
+      if (imageFile is String && !imageFile.startsWith('http')) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'images',
+          imageFile,
+        ));
+      }
+    }
+
+    if (_imagesToDelete.isNotEmpty) {
+      request.fields['images_to_delete'] = json.encode(_imagesToDelete);
     }
 
     final response = await request.send();
@@ -1938,7 +1995,7 @@ class _EditHousePageState extends State<EditHousePage> {
                   ),
                 ),
                 onChanged: (value) {
-                  _onFieldChanged('price', value);
+                  _onFieldChanged('price', int.tryParse(value) ?? 0);
                 },
               ),
               const SizedBox(
@@ -2719,55 +2776,64 @@ class _EditHousePageState extends State<EditHousePage> {
                     height: 10,
                   ),
                   Container(
-                    height: _imageFileList!.isEmpty ? 200.0 : null,
-                    margin: EdgeInsets.only(left: 20, right: 20),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFF5F0F0),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: _imageFileList!.isEmpty
-                        ? Center(
-                            child: Text(
-                              '尚未新增房屋照片',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                  fontSize: 25, color: Color(0xFFC7ADAD)),
-                            ),
-                          )
-                        : GridView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              crossAxisSpacing: 4.0,
-                              mainAxisSpacing: 4.0,
-                            ),
-                            itemCount: _imageFileList!.length,
-                            itemBuilder: (BuildContext context, int index) {
-                              return Stack(
-                                children: [
-                                  Image.file(
-                                    File(_imageFileList![index].path),
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
-                                  Positioned(
-                                    top: -5,
-                                    right: -5,
-                                    child: IconButton(
-                                      icon: Icon(Icons.delete),
-                                      onPressed: () {
-                                        _deleteImage(index);
-                                      },
+                      height: _imageFileList.isEmpty ? 200.0 : null,
+                      margin: EdgeInsets.only(left: 20, right: 20),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF5F0F0),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: _imageFileList.isEmpty
+                          ? Center(
+                              child: Text(
+                                '尚未新增房屋照片',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 25, color: Color(0xFFC7ADAD)),
+                              ),
+                            )
+                          : GridView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 4.0,
+                                mainAxisSpacing: 4.0,
+                              ),
+                              itemCount: _imageFileList.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final image = _imageFileList[index];
+                                return Stack(
+                                  children: [
+                                    image is String && image.startsWith('http')
+                                        ? Image.network(
+                                            image,
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                          )
+                                        : Image.file(
+                                            File(image is XFile
+                                                ? image.path
+                                                : image),
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                          ),
+                                    Positioned(
+                                      top: -5,
+                                      right: -5,
+                                      child: IconButton(
+                                        icon: Icon(Icons.delete),
+                                        onPressed: () {
+                                          _deleteImage(index);
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                  ),
+                                  ],
+                                );
+                              },
+                            )),
                   SizedBox(
                     height: 20,
                   ),

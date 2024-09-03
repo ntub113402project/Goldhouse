@@ -86,7 +86,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
 
   void clickrecord(int memberId, String hid) async {
     final response = await http.post(
-      Uri.parse('http://4.227.176.245:5000//record_click'),
+      Uri.parse('http://4.227.176.245:5000/record_click'),
       headers: {
         'Content-Type': 'application/json',
       },
