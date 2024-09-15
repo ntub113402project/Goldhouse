@@ -540,7 +540,6 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
       }
     } catch (error) {
       print('Error: $error');
-      // 無法連線至 Flask API
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('無法連線至伺服器')),

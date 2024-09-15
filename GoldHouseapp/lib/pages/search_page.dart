@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'class.dart';
+import 'housecard.dart';
 import 'housedetail_page.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
@@ -84,7 +86,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
   late ScrollController _scrollController;
   bool _isLoading = false;
 
-  void clickrecord(int memberId, String hid) async {
+  Future<void> clickrecord(int memberId, String hid) async {
     final response = await http.post(
       Uri.parse('http://4.227.176.245:5000/record_click'),
       headers: {
@@ -161,28 +163,49 @@ class _SearchResultPageState extends State<SearchResultPage> {
   Future<void> _toggleFavorite(int index, String hid) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? memberId = prefs.getInt('member_id');
-
     if (memberId != null) {
-      final response = await http.post(
-        Uri.parse('http://4.227.176.245:5000/favorites'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
+      bool isCurrentlyFavorite = FavoriteManager().favoriteHids.contains(hid);
+
+      String apiEndpoint = 'http://4.227.176.245:5000/favorites';
+      String method = isCurrentlyFavorite ? 'DELETE' : 'POST';
+
+      setState(() {
+        if (isCurrentlyFavorite) {
+          FavoriteManager().favoriteHids.remove(hid);
+        } else {
+          FavoriteManager().favoriteHids.add(hid);
+        }
+        _displayResults[index]['isFavorite'] = !isCurrentlyFavorite;
+      });
+
+      final request = http.Request(method, Uri.parse(apiEndpoint))
+        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+        ..body = jsonEncode(<String, String>{
           'member_id': memberId.toString(),
           'hid': hid,
-        }),
-      );
+        });
 
-      if (response.statusCode == 200) {
+      final streamedResponse = await request.send();
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失敗: $responseBody')),
+        );
+
+        // 如果後端更新失敗，恢復本地收藏狀態
         setState(() {
-          _displayResults[index]['isFavorite'] =
-              !_displayResults[index]['isFavorite'];
+          if (isCurrentlyFavorite) {
+            FavoriteManager().favoriteHids.add(hid);
+          } else {
+            FavoriteManager().favoriteHids.remove(hid);
+          }
+          _displayResults[index]['isFavorite'] = isCurrentlyFavorite;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('收藏失敗')),
-        );
+        // 成功後更新 SharedPreferences
+        prefs.setStringList(
+            'favoriteHids', FavoriteManager().favoriteHids.toList());
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -202,171 +225,86 @@ class _SearchResultPageState extends State<SearchResultPage> {
         centerTitle: true,
         backgroundColor: const Color(0xFFECD8C9),
       ),
-      body: CustomScrollView(
-        controller: _scrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                if (index == _displayResults.length) {
-                  return _isLoading
-                      ? Padding(
-                          padding: const EdgeInsets.only(top: 5, bottom: 10),
-                          child: Center(
-                              child: Column(
-                            children: [
-                              LoadingAnimationWidget.staggeredDotsWave(
-                                color: Colors.brown,
-                                size: 32,
-                              ),
-                              const Text(
-                                '加載中',
-                                style: TextStyle(
-                                    color: Color.fromARGB(255, 119, 119, 119),
-                                    fontSize: 13),
-                              )
-                            ],
-                          )))
-                      : Container();
-                }
-                var result = _displayResults[index];
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 130,
-                  margin: const EdgeInsets.only(
-                      left: 20, right: 20, top: 10, bottom: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+      body: _displayResults.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.replay_rounded,
+                    size: 100,
+                    color: Color.fromARGB(255, 181, 181, 181),
                   ),
-                  child: GestureDetector(
-                    onTap: () async {
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      int? memberId = prefs.getInt('member_id');
-
-                      if (memberId != null) {
-                        clickrecord(memberId, result['hid']);
-                      }
-
-                      fetchHouseDetails(context, result['hid']);
-                    },
-                    child: Stack(
-                      children: [
-                        Card(
-                          elevation: 0,
-                          margin: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Stack(
-                                children: [
-                                  SizedBox(
-                                    width: 150,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(8),
-                                        bottomLeft: Radius.circular(8),
-                                      ),
-                                      child: Image.network(
-                                        result['imageUrl'],
-                                        fit: BoxFit.fill,
-                                        width:
-                                            MediaQuery.of(context).size.width *
-                                                0.35,
-                                        height: double.infinity,
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          return Image(
-                                              image: AssetImage(
-                                                  'assets/Logo.png'));
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 0,
-                                    right: 0,
-                                    child: IconButton(
-                                      icon: Icon(result['isFavorite'] ?? false
-                                          ? Icons.favorite
-                                          : Icons.favorite_border),
-                                      color: Colors.red,
-                                      onPressed: () {
-                                        _toggleFavorite(index, result['hid']);
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${result['pattern']} | ${result['title']}',
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${result['size']}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        '${result['city']} ${result['district']}',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 6,
-                          right: 8,
-                          child: Text(
-                            '${result['price']}元/月',
-                            style: const TextStyle(
-                              color: Color.fromARGB(255, 249, 58, 58),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
+                  SizedBox(
+                    height: 10,
+                  ),
+                  Text(
+                    '尚未有符合的房屋',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Color.fromARGB(255, 181, 181, 181),
                     ),
+                  )
+                ],
+              ),
+            )
+          : CustomScrollView(
+              controller: _scrollController,
+              slivers: [
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      if (index == _displayResults.length) {
+                        return _isLoading
+                            ? Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 5, bottom: 10),
+                                child: Center(
+                                    child: Column(
+                                  children: [
+                                    LoadingAnimationWidget.staggeredDotsWave(
+                                      color: Colors.brown,
+                                      size: 32,
+                                    ),
+                                    const Text(
+                                      '加載中',
+                                      style: TextStyle(
+                                          color: Color.fromARGB(
+                                              255, 119, 119, 119),
+                                          fontSize: 13),
+                                    )
+                                  ],
+                                )))
+                            : Container();
+                      }
+                      var result = _displayResults[index];
+                      bool isFavorite = FavoriteManager()
+                          .favoriteHids
+                          .contains(result['hid'].toString());
+
+                      return HouseCard(
+                        houseData: result,
+                        isFavorite: isFavorite,
+                        onFavoriteToggle: () =>
+                            _toggleFavorite(index, result['hid']),
+                        onTap: () async {
+                          SharedPreferences prefs =
+                              await SharedPreferences.getInstance();
+                          int? memberId = prefs.getInt('member_id');
+
+                          if (memberId != null) {
+                            await clickrecord(memberId, result['hid']);
+                          }
+
+                          await fetchHouseDetails(context, result['hid']);
+                        },
+                      );
+                    },
+                    childCount: _displayResults.length + 1,
                   ),
-                );
-              },
-              childCount: _displayResults.length + 1,
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -446,7 +384,9 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                   4,
           'house_size': houseSizeList == null ? null : houseSizeList,
           'house_type': _selectedHouseType == '不限' ? null : _selectedHouseType,
-          'other_options': _selectedOtherOptions.join(',')
+          'other_options': _selectedOtherOptions.isNotEmpty
+              ? _selectedOtherOptions.join(',')
+              : '不限',
         }),
       );
       if (response.statusCode == 200) {
@@ -776,8 +716,9 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
   }
 
   void _otherSelectionBottomSheet(BuildContext context) {
-    List<String> options = ['不限', '有陽台', '可養寵物', '可開伙', '限男', '限女'];
-    List<String> selectedOptions = ['不限'];
+    List<String> options = ['不限', '可養寵物', '可開伙', '限男', '限女'];
+    List<String> selectedOptions = List.from(
+        _selectedOtherOptions.isEmpty ? ['不限'] : _selectedOtherOptions);
 
     showModalBottomSheet(
       context: context,
@@ -817,9 +758,18 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                             if (value == true) {
                               selectedOptions.remove('不限');
                               selectedOptions.add(option);
+                              if (option == '限男') {
+                                selectedOptions.remove('限女'); // 選擇限男時取消限女
+                              } else if (option == '限女') {
+                                selectedOptions.remove('限男'); // 選擇限女時取消限男
+                              }
                             } else {
                               selectedOptions.remove(option);
                             }
+                          }
+
+                          if (selectedOptions.isEmpty) {
+                            selectedOptions.add('不限');
                           }
                         });
                       },
@@ -828,8 +778,9 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
                     padding: const EdgeInsets.all(8),
                     child: ElevatedButton(
                       style: const ButtonStyle(
-                          backgroundColor:
-                              MaterialStatePropertyAll(Color(0xFF613F26))),
+                        backgroundColor:
+                            MaterialStatePropertyAll(Color(0xFF613F26)),
+                      ),
                       onPressed: () {
                         setState(() {
                           _selectedOtherOptions = List.from(selectedOptions);

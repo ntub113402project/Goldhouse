@@ -204,6 +204,7 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFC5AE9D),
       appBar: AppBar(
         backgroundColor: const Color(0xff613F26),

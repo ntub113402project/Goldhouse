@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'class.dart';
+import 'housecard.dart';
 import 'housedetail_page.dart';
 
 class SubscriptionPage extends StatefulWidget {
@@ -57,8 +59,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     if (memberId == null) {
       print('Member ID not found');
       setState(() {
-      subscriptions = [];  
-    });
+        subscriptions = [];
+      });
       return;
     }
 
@@ -105,9 +107,14 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       final subscriptionId = responseData['subscription_id'];
       setState(() {
         subscriptions.add({
-          'subscription': subscription,
-          'subscription_time': subscriptionTime,
           'subscription_id': subscriptionId,
+          'city': subscription['city'],
+          'district': subscription['district'] ?? ['不限'],
+          'pattern': subscription['pattern'] ?? ['不限'],
+          'rentalrange': subscription['rentalrange'] ?? '不限',
+          'roomcount': subscription['roomcount'] ?? '不限',
+          'size': subscription['size'] ?? '不限',
+          'type': subscription['type'] ?? ['不限'],
           'properties': [],
         });
       });
@@ -122,10 +129,28 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   void _removeSubscription(int index) async {
-    setState(() {
-      subscriptions.removeAt(index);
-    });
-    await _saveSubscriptions();
+    int? subscriptionId = subscriptions[index]['subscription_id'];
+
+    if (subscriptionId == null) {
+      print('Subscription ID not found');
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/delete_subscription'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'subscription_id': subscriptionId}),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        subscriptions.removeAt(index);
+      });
+      await _saveSubscriptions();
+      print('Subscription deleted successfully');
+    } else {
+      print('Failed to delete subscription');
+    }
   }
 
   Future<void> _updateLastCheckTime(int subscriptionId) async {
@@ -258,7 +283,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                    ),
+                                   ),
                                   ),
                                   Text(
                                     style: TextStyle(fontSize: 16),
@@ -312,7 +337,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 }
 
-class PropertyDetailsPage extends StatelessWidget {
+class PropertyDetailsPage extends StatefulWidget {
   final List<dynamic> properties;
   final Map<String, dynamic> subscription;
   final int subscriptionId;
@@ -325,8 +350,67 @@ class PropertyDetailsPage extends StatelessWidget {
     required this.onReturn,
   });
 
+  @override
+  _PropertyDetailsPageState createState() => _PropertyDetailsPageState();
+}
+
+class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
   void _handlePop(bool value) {
-    onReturn(subscriptionId);
+    widget.onReturn(widget.subscriptionId);
+  }
+
+  Future<void> _toggleFavorite(int index, String hid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+    if (memberId != null) {
+      bool isCurrentlyFavorite = FavoriteManager().favoriteHids.contains(hid);
+
+      String apiEndpoint = 'http://4.227.176.245:5000/favorites';
+      String method = isCurrentlyFavorite ? 'DELETE' : 'POST';
+
+      setState(() {
+        if (isCurrentlyFavorite) {
+          FavoriteManager().favoriteHids.remove(hid);
+        } else {
+          FavoriteManager().favoriteHids.add(hid);
+        }
+        widget.properties[index]['isFavorite'] = !isCurrentlyFavorite;
+      });
+
+      final request = http.Request(method, Uri.parse(apiEndpoint))
+        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+        ..body = jsonEncode(<String, String>{
+          'member_id': memberId.toString(),
+          'hid': hid,
+        });
+
+      final streamedResponse = await request.send();
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失敗: $responseBody')),
+        );
+
+        // 如果後端更新失敗，恢復本地收藏狀態
+        setState(() {
+          if (isCurrentlyFavorite) {
+            FavoriteManager().favoriteHids.add(hid);
+          } else {
+            FavoriteManager().favoriteHids.remove(hid);
+          }
+          widget.properties[index]['isFavorite'] = isCurrentlyFavorite;
+        });
+      } else {
+        // 成功後更新 SharedPreferences
+        prefs.setStringList(
+            'favoriteHids', FavoriteManager().favoriteHids.toList());
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('請先登入')),
+      );
+    }
   }
 
   void fetchHouseDetails(BuildContext context, String hid) async {
@@ -376,12 +460,12 @@ class PropertyDetailsPage extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: const Color(0xFFECD8C9),
           title: Text(
-            '${subscription['city']} - 房屋结果',
+            '${widget.subscription['city']} - 房屋结果',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           centerTitle: true,
         ),
-        body: properties.isEmpty
+        body: widget.properties.isEmpty
             ? Center(
                 child: Text(
                   '尚未有新刊登的房屋',
@@ -390,10 +474,17 @@ class PropertyDetailsPage extends StatelessWidget {
                 ),
               )
             : ListView.builder(
-                itemCount: properties.length,
+                itemCount: widget.properties.length,
                 itemBuilder: (context, index) {
-                  final property = properties[index];
-                  return GestureDetector(
+                  final property = widget.properties[index];
+                  bool isFavorite = FavoriteManager()
+                      .favoriteHids
+                      .contains(property['hid'].toString());
+                  return HouseCard(
+                    houseData: property,
+                    isFavorite: isFavorite,
+                    onFavoriteToggle: () =>
+                        _toggleFavorite(index, property['hid']),
                     onTap: () async {
                       SharedPreferences prefs =
                           await SharedPreferences.getInstance();
@@ -405,118 +496,9 @@ class PropertyDetailsPage extends StatelessWidget {
 
                       fetchHouseDetails(context, property['hid']);
                     },
-                    child: Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: 130,
-                      margin: const EdgeInsets.only(
-                        left: 20,
-                        right: 20,
-                        top: 10,
-                        bottom: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          Card(
-                            elevation: 0,
-                            margin: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    bottomLeft: Radius.circular(8),
-                                  ),
-                                  child: Image.network(
-                                    property['imageUrl'] ?? 'assets/Logo.png',
-                                    fit: BoxFit.cover,
-                                    width: MediaQuery.of(context).size.width *
-                                        0.35,
-                                    height: double.infinity,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image(
-                                        width: 130,
-                                        image: AssetImage('assets/Logo.png'),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${property['pattern']} | ${property['title']}',
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.clip,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '${property['size']} ${property['district']}',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.clip,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 6,
-                            right: 8,
-                            child: Row(
-                              children: [
-                                Text(
-                                  '${property['price']}',
-                                  style: const TextStyle(
-                                    color: Color.fromARGB(255, 249, 58, 58),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const Text(
-                                  ' 元/月',
-                                  style: TextStyle(
-                                    color: Color.fromARGB(255, 249, 58, 58),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   );
                 },
-              ),                        
+              ),
       ),
     );
   }

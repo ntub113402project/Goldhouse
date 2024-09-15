@@ -14,8 +14,9 @@ class CreateHousePage extends StatefulWidget {
 class _CreateHousePageState extends State<CreateHousePage> {
   List<Map<String, dynamic>> createhouses = [];
   int? selectedHouseIndex;
+  Map<int, bool> selected = {};
+  bool showcheckbox = false;
 
-  @override
   @override
   void initState() {
     super.initState();
@@ -58,6 +59,27 @@ class _CreateHousePageState extends State<CreateHousePage> {
     List<String> storedHouses = prefs.getStringList('storedHouses') ?? [];
     storedHouses.add(jsonEncode(houseData));
     await prefs.setStringList('storedHouses', storedHouses);
+  }
+
+  void _deleteHouse(String hid, int index) async {
+    final response = await http.delete(
+      Uri.parse('http://4.227.176.245:5000/houses/$hid'),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        createhouses.removeAt(index);
+      });
+
+      // 更新 SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      List<String> storedHouses = prefs.getStringList('storedHouses') ?? [];
+      storedHouses.removeWhere((house) => jsonDecode(house)['hid'] == hid);
+      await prefs.setStringList('storedHouses', storedHouses);
+
+    } else {
+
+    }
   }
 
   void _navigateToAddHousePage() async {
@@ -123,17 +145,33 @@ class _CreateHousePageState extends State<CreateHousePage> {
           const SizedBox(
             height: 10,
           ),
-          Align(
-            alignment: Alignment.topCenter,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF613F26)),
-              onPressed: _navigateToAddHousePage,
-              child: const Text(
-                '刊登物件',
-                style: TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
+          Stack(
+            children: [
+              Align(
+                alignment: Alignment.center,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF613F26),
+                  ),
+                  onPressed: _navigateToAddHousePage,
+                  child: const Text(
+                    '刊登物件',
+                    style: TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
+                  ),
+                ),
               ),
-            ),
+              Positioned(
+                right: 0,
+                child: IconButton(
+                  icon: Icon(Icons.delete_forever),
+                  onPressed: () {
+                    setState(() {
+                      showcheckbox = !showcheckbox;
+                    });
+                  },
+                ),
+              ),
+            ],
           ),
           Expanded(
             child: createhouses.isEmpty
@@ -173,7 +211,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
                           : 'http://4.227.176.245:5000$imagePath';
                       return Container(
                           width: MediaQuery.of(context).size.width,
-                          height: 130,
+                          height: 150,
                           margin: const EdgeInsets.only(
                               left: 20, right: 20, top: 10, bottom: 10),
                           decoration: BoxDecoration(
@@ -187,11 +225,11 @@ class _CreateHousePageState extends State<CreateHousePage> {
                               ),
                             ],
                           ),
-                          child: GestureDetector(
-                            onTap: () => _showOverlay(index),
-                            child: Stack(children: [
-                              Stack(
-                                children: [
+                          child: Stack(
+                            children: [
+                              GestureDetector(
+                                onTap: () => _showOverlay(index),
+                                child: Stack(children: [
                                   Card(
                                     color: selectedHouseIndex == index
                                         ? Colors.grey[300]
@@ -261,13 +299,18 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                                 ),
                                                 const SizedBox(height: 2),
                                                 Text(
-                                                  '${createhouses[index]['size']} ${createhouses[index]['city']}${createhouses[index]['district']}',
+                                                  '${createhouses[index]['size']}',
                                                   style: const TextStyle(
                                                     fontSize: 14,
                                                   ),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.clip,
                                                 ),
+                                                Text(
+                                                  '${createhouses[index]['city']} ${createhouses[index]['district']}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                  ),)
                                               ],
                                             ),
                                           ),
@@ -299,80 +342,100 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                       ],
                                     ),
                                   ),
-                                ],
-                              ),
-                              if (selectedHouseIndex == index)
-                                Positioned.fill(
-                                  child: GestureDetector(
-                                    onTap: _hideOverlay,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Color.fromARGB(255, 33, 33, 33)
-                                            .withOpacity(0.9),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          ElevatedButton(
+                                  if (showcheckbox)
+                                    Positioned(
+                                        top: -5,
+                                        right: -5,
+                                        child: IconButton(
                                             onPressed: () {
                                               String hid =
                                                   createhouses[index]['hid'];
-                                              fetchHouseDetails(context, hid);
+                                              _deleteHouse(
+                                                  hid, index); 
+                                              setState(() {
+                                                showcheckbox = !showcheckbox;
+                                              });
                                             },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
-                                            ),
-                                            child: const Text(
-                                              '瀏覽房屋',
-                                              style: TextStyle(
-                                                  color: Colors.black),
-                                            ),
+                                            icon: Icon(Icons.cancel_rounded,color: Color(0xFF613F26),size: 30,))),
+                                  if (selectedHouseIndex == index)
+                                    Positioned.fill(
+                                      child: GestureDetector(
+                                        onTap: _hideOverlay,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color:
+                                                Color.fromARGB(255, 33, 33, 33)
+                                                    .withOpacity(0.9),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              final updatedHouseData =
-                                                  await Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      EditHousePage(
-                                                          houseData:
-                                                              createhouses[
-                                                                  index]),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  String hid =
+                                                      createhouses[index]
+                                                          ['hid'];
+                                                  fetchHouseDetails(
+                                                      context, hid);
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
                                                 ),
-                                              );
+                                                child: const Text(
+                                                  '瀏覽房屋',
+                                                  style: TextStyle(
+                                                      color: Colors.black),
+                                                ),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () async {
+                                                  final updatedHouseData =
+                                                      await Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          EditHousePage(
+                                                              houseData:
+                                                                  createhouses[
+                                                                      index]),
+                                                    ),
+                                                  );
 
-                                              if (updatedHouseData != null) {
-                                                // 更新房屋數據
-                                                setState(() {
-                                                  createhouses[index] =
-                                                      updatedHouseData;
-                                                });
+                                                  if (updatedHouseData !=
+                                                      null) {
+                                                    // 更新房屋數據
+                                                    setState(() {
+                                                      createhouses[index] =
+                                                          updatedHouseData;
+                                                    });
 
-                                                // 隱藏覆蓋層
-                                                _hideOverlay();
+                                                    // 隱藏覆蓋層
+                                                    _hideOverlay();
 
-                                                // 刷新資料列表
-                                                _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
-                                              }
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.white,
-                                            ),
-                                            child: const Text(
-                                              '編輯房屋',
-                                              style: TextStyle(
-                                                  color: Colors.black),
-                                            ),
+                                                    // 刷新資料列表
+                                                    _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
+                                                  }
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.white,
+                                                ),
+                                                child: const Text(
+                                                  '編輯房屋',
+                                                  style: TextStyle(
+                                                      color: Colors.black),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                            ]),
+                                ]),
+                              ),
+                            ],
                           ));
                     },
                   ),

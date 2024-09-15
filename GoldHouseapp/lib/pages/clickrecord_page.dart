@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'class.dart';
+import 'housecard.dart';
 import 'housedetail_page.dart';
 
 class ClickHistoryPage extends StatefulWidget {
@@ -20,6 +22,60 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
     _fetchClickHistory();
   }
 
+  Future<void> _toggleFavorite(int index, String hid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+    if (memberId != null) {
+      bool isCurrentlyFavorite = FavoriteManager().favoriteHids.contains(hid);
+
+      String apiEndpoint = 'http://4.227.176.245:5000/favorites';
+      String method = isCurrentlyFavorite ? 'DELETE' : 'POST';
+
+      setState(() {
+        if (isCurrentlyFavorite) {
+          FavoriteManager().favoriteHids.remove(hid);
+        } else {
+          FavoriteManager().favoriteHids.add(hid);
+        }
+        _clickHistory[index]['isFavorite'] = !isCurrentlyFavorite;
+      });
+
+      final request = http.Request(method, Uri.parse(apiEndpoint))
+        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+        ..body = jsonEncode(<String, String>{
+          'member_id': memberId.toString(),
+          'hid': hid,
+        });
+
+      final streamedResponse = await request.send();
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失敗: $responseBody')),
+        );
+
+        // 如果後端更新失敗，恢復本地收藏狀態
+        setState(() {
+          if (isCurrentlyFavorite) {
+            FavoriteManager().favoriteHids.add(hid);
+          } else {
+            FavoriteManager().favoriteHids.remove(hid);
+          }
+          _clickHistory[index]['isFavorite'] = isCurrentlyFavorite;
+        });
+      } else {
+        // 成功後更新 SharedPreferences
+        prefs.setStringList(
+            'favoriteHids', FavoriteManager().favoriteHids.toList());
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('請先登入')),
+      );
+    }
+  }
+
   Future<void> _fetchClickHistory() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? memberId = prefs.getInt('member_id');
@@ -32,17 +88,17 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
       if (response.statusCode == 200) {
         setState(() {
           _clickHistory = json.decode(response.body);
-          _isLoading = false; 
+          _isLoading = false;
         });
       } else {
         setState(() {
-          _isLoading = false; 
+          _isLoading = false;
         });
         print('Failed to load click history: ${response.body}');
       }
     } else {
       setState(() {
-        _isLoading = false; 
+        _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('請先登入')),
@@ -70,6 +126,18 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
     }
   }
 
+  void _clearclickrecord() async {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/clear_click_records'),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        _clickHistory.clear();
+      });
+    } else {}
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,133 +148,27 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [TextButton(onPressed: _clearclickrecord, child: Text('清除'))],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator()) 
+          ? Center(child: CircularProgressIndicator())
           : _clickHistory.isEmpty
               ? Center(child: Text('尚無瀏覽紀錄'))
               : ListView.builder(
                   itemCount: _clickHistory.length,
                   itemBuilder: (context, index) {
                     var click = _clickHistory[index];
-                    return Container(
-                      width: MediaQuery.of(context).size.width,
-                      height: 130,
-                      margin: const EdgeInsets.only(
-                          left: 20, right: 20, top: 10, bottom: 10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 1,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: GestureDetector(
-                        onTap: () {
-                          fetchHouseDetails(context, click['hid']);
-                        },
-                        child: Stack(
-                          children: [
-                            Card(
-                              elevation: 0,
-                              margin: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      bottomLeft: Radius.circular(8),
-                                    ),
-                                    child: Image.network(
-                                      click['imageUrl'],
-                                      fit: BoxFit.cover,
-                                      width: MediaQuery.of(context).size.width *
-                                          0.35,
-                                      height: double.infinity,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/Logo.png',
-                                          fit: BoxFit.cover,
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.35,
-                                          height: double.infinity,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '${click['pattern']} | ${click['title']}',
-                                            style: const TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            '${click['size']}',
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.clip,
-                                          ),
-                                          Text(
-                                            '${click['city']} ${click['district']}',
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 6,
-                              right: 8,
-                              child: Row(
-                                children: [
-                                  Text(
-                                    '${click['price']}',
-                                    style: const TextStyle(
-                                      color: Color.fromARGB(255, 249, 58, 58),
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const Text(
-                                    ' 元/月',
-                                    style: TextStyle(
-                                        color:
-                                            Color.fromARGB(255, 249, 58, 58),
-                                        fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    bool isFavorite = FavoriteManager()
+                        .favoriteHids
+                        .contains(click['hid'].toString());
+                    return HouseCard(
+                      houseData: click,
+                      isFavorite: isFavorite,
+                      onFavoriteToggle: () =>
+                          _toggleFavorite(index, click['hid']),
+                      onTap: () async {
+                        fetchHouseDetails(context, click['hid']);
+                      },
                     );
                   },
                 ),

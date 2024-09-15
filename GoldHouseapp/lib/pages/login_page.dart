@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'class.dart';
+
 
 
 class LoginPage extends StatefulWidget {
@@ -33,6 +35,9 @@ class _LoginPageState extends State<LoginPage> {
       await prefs.setString('gender', members['gender']);
       await prefs.setInt('member_id', members['member_id']);
       await prefs.setBool('isLoggedIn', true);
+
+      WidgetsFlutterBinding.ensureInitialized();
+      await FavoriteManager().initializeFavorites();
 
 
       showDialog(

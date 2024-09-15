@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 class House {
   final int id;
   final String type;
@@ -160,3 +163,72 @@ final Map<String, IconData> servicesIcons = {
     '車位': Icons.local_parking_rounded,
     
   };
+  
+class FavoriteManager {
+  static final FavoriteManager _instance = FavoriteManager._internal();
+  factory FavoriteManager() {
+    return _instance;
+  }
+  FavoriteManager._internal();
+  
+  Set<String> _favoriteHids = {};
+
+  Future<void> initializeFavorites() async {
+    if (_favoriteHids.isEmpty) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      int? memberId = prefs.getInt('member_id');
+      if (memberId != null) {
+        final response = await http.get(
+          Uri.parse('http://4.227.176.245:5000/favorites/$memberId'),
+        );
+
+        if (response.statusCode == 200) {
+          List<dynamic> favorites = json.decode(response.body);
+          _favoriteHids = favorites.map((house) => house['hid'].toString()).toSet();
+        }
+      }
+    }
+  }
+
+  Set<String> get favoriteHids => _favoriteHids;
+}
+
+// class SubscriptionManager {
+//   Future<List<Map<String, dynamic>>> loadSubscriptions() async {
+//     SharedPreferences prefs = await SharedPreferences.getInstance();
+//     int? memberId = prefs.getInt('member_id');
+
+//     if (memberId == null) {
+//       print('Member ID not found');
+//       return [];
+//     }
+
+//     final response = await http.post(
+//       Uri.parse('http://4.227.176.245:5000/get_subscriptions'),
+//       headers: {'Content-Type': 'application/json'},
+//       body: jsonEncode({'member_id': memberId}),
+//     );
+
+//     if (response.statusCode == 200) {
+//       final List<dynamic> data = jsonDecode(response.body);
+//       print('Received data: $data');
+//       return data
+//           .map((item) => {
+//                 'subscription_id': item['subscription_id'],
+//                 'city': item['city'],
+//                 'district': List<String>.from(item['district']),
+//                 'pattern': List<String>.from(item['pattern']),
+//                 'rentalrange': item['rentalrange'],
+//                 'roomcount': item['roomcount'],
+//                 'size': item['size'],
+//                 'type': List<String>.from(item['type']),
+//                 'properties': [],
+//               })
+//           .toList();
+//     } else {
+//       print('Failed to fetch subscriptions');
+//       return [];
+//     }
+//   }
+
+// }

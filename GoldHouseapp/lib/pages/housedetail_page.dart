@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'class.dart';
@@ -18,7 +17,6 @@ class HouseDetailPage extends StatefulWidget {
 
 class _HouseDetailPageState extends State<HouseDetailPage> {
   int _current = 0;
-  
 
   Future<int?> _getMemberId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -27,42 +25,42 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
   }
 
   void _onBottomAppBarPressed() async {
-  int? memberId = await _getMemberId();
-  String hid = widget.houseDetails['hid'].toString();
-  
+    int? memberId = await _getMemberId();
+    String hid = widget.houseDetails['hid'].toString();
 
-  if (memberId != null && hid.isNotEmpty) {
-    final response = await http.post(
-      Uri.parse('http://4.227.176.245:5000/save_click'),  
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, dynamic>{
-        'member_id': memberId,
-        'hid': hid,
-      }),
-    );
+    if (memberId != null && hid.isNotEmpty) {
+      final response = await http.post(
+        Uri.parse('http://4.227.176.245:5000/save_click'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'member_id': memberId,
+          'hid': hid,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      String message = "hid:$hid";
-      String encodedMessage = Uri.encodeComponent(message);
-      
-      final url = Uri.parse("https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
-      if (await canLaunchUrl(url)) {
-        await launchUrl(
-          url,
-          mode: LaunchMode.externalApplication, 
-        );
+      if (response.statusCode == 200) {
+        String message = "hid:$hid";
+        String encodedMessage = Uri.encodeComponent(message);
+
+        final url = Uri.parse(
+            "https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
+        if (await canLaunchUrl(url)) {
+          await launchUrl(
+            url,
+            mode: LaunchMode.externalApplication,
+          );
+        } else {
+          print('Could not launch $url');
+        }
       } else {
-        print('Could not launch $url');
+        print('Failed to send data to Flask API: ${response.statusCode}');
       }
     } else {
-      print('Failed to send data to Flask API: ${response.statusCode}');
+      print('Member ID or HID is missing');
     }
-  } else {
-    print('Member ID or HID is missing');
   }
-}
 
   Widget _buildIntroduce() {
     return Card(
@@ -144,6 +142,9 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
   Widget build(BuildContext context) {
     List<String> imageUrlList =
         List<String>.from(widget.houseDetails['imageUrl']);
+    if (imageUrlList.isEmpty) {
+      imageUrlList = ['assets/Logo.png']; 
+    }
     List<Widget> allImages = imageUrlList
         .map<Widget>((url) => Image.network(url, fit: BoxFit.fill, width: 1000,
                 errorBuilder: (BuildContext context, Object exception,
@@ -358,7 +359,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                 direction: Axis.horizontal,
                 spacing: 3,
                 runSpacing: 5,
-                children: widget.houseDetails['furniture'].entries
+                children: widget.houseDetails['service'].entries
                     .map<Widget>((entry) {
                   bool isActive = entry.value;
                   return Container(
@@ -485,48 +486,49 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
   }
 
   void _onBottomAppBarPressed() async {
-  int? memberId = await _getMemberId();
-  String hid = widget.houseData['hid'].toString();
+    int? memberId = await _getMemberId();
+    String hid = widget.houseData['hid'].toString();
 
-  if (memberId != null && hid.isNotEmpty) {
-    final response = await http.post(
-      Uri.parse('http://4.227.176.245:5000/save_click'),  
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, dynamic>{
-        'member_id': memberId,
-        'hid': hid,
-      }),
-    );
+    if (memberId != null && hid.isNotEmpty) {
+      final response = await http.post(
+        Uri.parse('http://4.227.176.245:5000/save_click'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'member_id': memberId,
+          'hid': hid,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      String message = "hid:$hid";
-      String encodedMessage = Uri.encodeComponent(message);
-      
-      final url = Uri.parse("https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
-      if (await canLaunchUrl(url)) {
-        await launchUrl(
-          url,
-          mode: LaunchMode.externalApplication, 
-        );
+      if (response.statusCode == 200) {
+        String message = "hid:$hid";
+        String encodedMessage = Uri.encodeComponent(message);
+
+        final url = Uri.parse(
+            "https://line.me/R/oaMessage/%40204wjleq?$encodedMessage");
+        if (await canLaunchUrl(url)) {
+          await launchUrl(
+            url,
+            mode: LaunchMode.externalApplication,
+          );
+        } else {
+          print('Could not launch $url');
+        }
       } else {
-        print('Could not launch $url');
+        print('Failed to send data to Flask API: ${response.statusCode}');
       }
     } else {
-      print('Failed to send data to Flask API: ${response.statusCode}');
+      print('Member ID or HID is missing');
     }
-  } else {
-    print('Member ID or HID is missing');
   }
-}
+
   @override
-void initState() {
-  super.initState();
-  selectedHouse = widget.houseData;
-  print("houseData: ${widget.houseData}");
-}
-  
+  void initState() {
+    super.initState();
+    selectedHouse = widget.houseData;
+    print("houseData: ${widget.houseData}");
+  }
 
   Widget _buildIntroduce() {
     return Container(
@@ -618,8 +620,7 @@ void initState() {
 
   @override
   Widget build(BuildContext context) {
-    List<String> imageUrlList =
-        List<String>.from(widget.houseData['imageUrl']);
+    List<String> imageUrlList = List<String>.from(widget.houseData['imageUrl']);
     List<Widget> allImages = imageUrlList
         .map<Widget>((url) => Image.network(url, fit: BoxFit.fill, width: 1000,
                 errorBuilder: (BuildContext context, Object exception,
@@ -629,27 +630,27 @@ void initState() {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFECD8C9),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFECD8C9),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          title: Image.asset(
+            "assets/logo_words.png",
+            fit: BoxFit.contain,
+            height: 70,
+          ),
+          centerTitle: true,
         ),
-        title: Image.asset(
-          "assets/logo_words.png",
-          fit: BoxFit.contain,
-          height: 70,
-        ),
-        centerTitle: true,
-      ),
-      body: ListView(
-        children: [
-          Stack(
-            alignment: Alignment.bottomCenter,
-            children: <Widget>[
-              CarouselSlider(
+        body: ListView(
+          children: [
+            Stack(
+              alignment: Alignment.bottomCenter,
+              children: <Widget>[
+                CarouselSlider(
                   items: allImages,
                   options: CarouselOptions(
                     autoPlay: true,
@@ -664,355 +665,356 @@ void initState() {
                     },
                   ),
                 ),
-              Positioned(
-                bottom: 20,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(allImages.length, (index) {
-                    return GestureDetector(
-                      onTap: () => {},
-                      child: Container(
-                        width: 1.0,
-                        height: 12.0,
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 8.0, horizontal: 4.0),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color:
-                              (Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.white
-                                      : Colors.black)
-                                  .withOpacity(_current == index ? 0.9 : 0.4),
+                Positioned(
+                  bottom: 20,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(allImages.length, (index) {
+                      return GestureDetector(
+                        onTap: () => {},
+                        child: Container(
+                          width: 1.0,
+                          height: 12.0,
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8.0, horizontal: 4.0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                (Theme.of(context).brightness == Brightness.dark
+                                        ? Colors.white
+                                        : Colors.black)
+                                    .withOpacity(_current == index ? 0.9 : 0.4),
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, right: 10),
+              child: Align(
+                alignment: Alignment.center,
+                child: Text(
+                  widget.houseData['title'],
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Padding(
-            padding: const EdgeInsets.only(left: 10, right: 10),
-            child: Align(
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 10, top: 20, right: 10),
+              child: Wrap(
+                spacing: 5,
+                runSpacing: 12,
+                alignment: WrapAlignment.spaceEvenly,
+                children: [
+                  Container(
+                    alignment: Alignment.center,
+                    width: 110,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F0F0),
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Text(
+                      widget.houseData['district'],
+                      style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF613F26),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    alignment: Alignment.center,
+                    width: 110,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F0F0),
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Text(
+                      widget.houseData['pattern'],
+                      style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF613F26),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    alignment: Alignment.center,
+                    width: 110,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F0F0),
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Text(
+                      '${widget.houseData['size']}',
+                      style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF613F26),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    alignment: Alignment.center,
+                    width: 110,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F0F0),
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Text(
+                      '${widget.houseData['layer']}',
+                      style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF613F26),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    alignment: Alignment.center,
+                    width: 110,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F0F0),
+                      borderRadius: BorderRadius.circular(20.0),
+                    ),
+                    child: Text(
+                      widget.houseData['type'],
+                      style: const TextStyle(
+                          fontSize: 20,
+                          color: Color(0xFF613F26),
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+                padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          '租金\n包含',
+                          style: TextStyle(
+                            color: Color(0xFFD1C0C0),
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 10,
+                        ),
+                        Text(
+                          widget.houseData['pricecontain'].join('|'),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFFD1C0C0),
+                          ),
+                        )
+                      ],
+                    ),
+                    Column(
+                      children: [
+                        Text(
+                          '${widget.houseData['price']} 元/月',
+                          style: const TextStyle(
+                            color: Color(0xFFE40A0A),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          widget.houseData['deposit'],
+                          style: const TextStyle(
+                            color: Color(0xFFD1C0C0),
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                )),
+            const SizedBox(
+              height: 15,
+            ),
+            Container(
+              padding: EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
+              margin: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFECD8C9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
               alignment: Alignment.center,
               child: Text(
-                widget.houseData['title'],
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                '${widget.houseData['city']}${widget.houseData['district']}${widget.houseData['address']}',
+                style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFF613F26),
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(
+              height: 15,
+            ),
+            Container(
+              padding: EdgeInsets.only(top: 10, bottom: 10, left: 5, right: 5),
+              margin: EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFECD8C9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: <Widget>[
+                    Text('寵物：${widget.houseData['pet']}',
+                        style:
+                            TextStyle(fontSize: 18, color: Color(0xFF613F26))),
+                    Text('性別限制：${widget.houseData['genderlimit']}',
+                        style:
+                            TextStyle(fontSize: 18, color: Color(0xFF613F26))),
+                  ],
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 10, top: 20, right: 10),
-            child: Wrap(
-              spacing: 5,
-              runSpacing: 12,
-              alignment: WrapAlignment.spaceEvenly,
-              children: [
-                Container(
-                  alignment: Alignment.center,
-                  width: 110,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F0F0),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: Text(
-                    widget.houseData['district'],
-                    style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF613F26),
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  alignment: Alignment.center,
-                  width: 110,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F0F0),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: Text(
-                    widget.houseData['pattern'],
-                    style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF613F26),
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  alignment: Alignment.center,
-                  width: 110,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F0F0),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: Text(
-                    '${widget.houseData['size']}',
-                    style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF613F26),
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  alignment: Alignment.center,
-                  width: 110,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F0F0),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: Text(
-                    '${widget.houseData['layer']}',
-                    style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF613F26),
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  alignment: Alignment.center,
-                  width: 110,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F0F0),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: Text(
-                    widget.houseData['type'],
-                    style: const TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF613F26),
-                        fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-              padding: const EdgeInsets.only(top: 20, left: 20, right: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        '租金\n包含',
-                        style: TextStyle(
-                          color: Color(0xFFD1C0C0),
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Text(
-                        widget.houseData['pricecontain'].join('|'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFFD1C0C0),
-                        ),
-                      )
-                    ],
-                  ),
-                  Column(
-                    children: [
-                      Text(
-                        '${widget.houseData['price']} 元/月',
-                        style: const TextStyle(
-                          color: Color(0xFFE40A0A),
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        widget.houseData['deposit'],
-                        style: const TextStyle(
-                          color: Color(0xFFD1C0C0),
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    ],
-                  ),
-                ],
-              )),
-          const SizedBox(
-            height: 15,
-          ),
-          Container(
-            padding: EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
-            margin: EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: const Color(0xFFECD8C9),
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${widget.houseData['city']}${widget.houseData['district']}${widget.houseData['address']}',
-              style: TextStyle(
-                  fontSize: 18,
-                  color: Color(0xFF613F26),
-                  fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          Container(
-            padding: EdgeInsets.only(top: 10, bottom: 10, left: 5, right: 5),
-            margin: EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: const Color(0xFFECD8C9),
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: <Widget>[
-                  Text('寵物：${widget.houseData['pet']}',
-                      style: TextStyle(fontSize: 18, color: Color(0xFF613F26))),
-                  Text('性別限制：${widget.houseData['genderlimit']}',
-                      style: TextStyle(fontSize: 18, color: Color(0xFF613F26))),
-                ],
+            const ListTile(
+              title: Text(
+                '設備',
+                style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF613F26)),
               ),
             ),
-          ),
-          const ListTile(
-            title: Text(
-              '設備',
-              style: TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF613F26)),
-            ),
-          ),
-          SizedBox(height: 5),
-          Container(
-            margin: const EdgeInsets.only(left: 15, right: 15),
-            padding: const EdgeInsets.all(10),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: const Color(0xFFECD8C9),
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
-                  spreadRadius: 1,
-                  blurRadius: 4,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Wrap(
-              direction: Axis.horizontal,
-              spacing: 3,
-              runSpacing: 5,
-              children: allservices1.map<Widget>((service) {
-                bool isActive = widget.houseData['service'][service] == true;
-                return Container(
-                  width: 80,
-                  padding: const EdgeInsets.all(5),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Icon(
-                        servicesIcons1[service],
-                        color: isActive
-                            ? const Color(0xFF613F26)
-                            : const Color.fromARGB(255, 181, 180, 180),
-                        size: 40,
-                      ),
-                      Text(
-                        service,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 15,
+            SizedBox(height: 5),
+            Container(
+              margin: const EdgeInsets.only(left: 15, right: 15),
+              padding: const EdgeInsets.all(10),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFECD8C9),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Wrap(
+                direction: Axis.horizontal,
+                spacing: 3,
+                runSpacing: 5,
+                children: allservices1.map<Widget>((service) {
+                  bool isActive = widget.houseData['service'][service] == true;
+                  return Container(
+                    width: 80,
+                    padding: const EdgeInsets.all(5),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(
+                          servicesIcons1[service],
                           color: isActive
-                              ? const Color.fromARGB(255, 67, 62, 62)
+                              ? const Color(0xFF613F26)
                               : const Color.fromARGB(255, 181, 180, 180),
-                          decoration: isActive
-                              ? TextDecoration.none
-                              : TextDecoration.lineThrough,
-                          decorationColor:
-                              const Color.fromARGB(255, 135, 135, 135),
+                          size: 40,
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+                        Text(
+                          service,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isActive
+                                ? const Color.fromARGB(255, 67, 62, 62)
+                                : const Color.fromARGB(255, 181, 180, 180),
+                            decoration: isActive
+                                ? TextDecoration.none
+                                : TextDecoration.lineThrough,
+                            decorationColor:
+                                const Color.fromARGB(255, 135, 135, 135),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-          const SizedBox(height: 5),
-          const ListTile(
-            title: Text(
-              '房屋簡介',
-              style: TextStyle(
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF613F26)),
+            const SizedBox(height: 5),
+            const ListTile(
+              title: Text(
+                '房屋簡介',
+                style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF613F26)),
+              ),
             ),
-          ),
-          const SizedBox(height: 5),
-          _buildIntroduce(),
-          SizedBox(
-            height: 10,
-          )
-        ],
-      ),
-      bottomNavigationBar: GestureDetector(
-        onTap: _onBottomAppBarPressed,
-        child: ClipRRect(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-          child: BottomAppBar(
-            color: Color(0xFF613F26),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.android, size: 45, color: Colors.white),
-                SizedBox(
-                  width: 7,
+            const SizedBox(height: 5),
+            _buildIntroduce(),
+            SizedBox(
+              height: 10,
+            )
+          ],
+        ),
+        bottomNavigationBar: GestureDetector(
+          onTap: _onBottomAppBarPressed,
+          child: ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+              child: BottomAppBar(
+                color: Color(0xFF613F26),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.android, size: 45, color: Colors.white),
+                    SizedBox(
+                      width: 7,
+                    ),
+                    Text(
+                      'Line智能助手',
+                      style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    )
+                  ],
                 ),
-                Text(
-                  'Line智能助手',
-                  style: TextStyle(
-                      fontSize: 25,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white),
-                )
-              ],
-            ),
-          )),
-      ) 
-    );
+              )),
+        ));
   }
 }

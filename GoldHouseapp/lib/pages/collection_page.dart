@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'class.dart';
+import 'housecard.dart';
 import 'housedetail_page.dart';
 
 class CollectionPage extends StatefulWidget {
@@ -12,6 +13,9 @@ class CollectionPage extends StatefulWidget {
 
 class _CollectionPageState extends State<CollectionPage> {
   late Future<List<dynamic>> _favoriteHousesFuture;
+  final List<String> _selectedHouses = [];
+  bool ismodifyclicked = false;
+
 
   @override
   void initState() {
@@ -62,174 +66,171 @@ class _CollectionPageState extends State<CollectionPage> {
         const SnackBar(content: Text('Failed to load house details')),
       );
     }
-  } 
+  }
+
+  void deleteSelectedFavorites() async {
+  if (_selectedHouses.isEmpty) {
+    setState(() {
+      ismodifyclicked = false;
+    });
+  }
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  int? memberId = prefs.getInt('member_id');
+
+  if (memberId != null) {
+    List<dynamic> updatedHouses = [];
+
+    final currentHouses = await _favoriteHousesFuture;
+    updatedHouses = currentHouses.where((house) => !_selectedHouses.contains(house['hid'])).toList();
+
+    for (var hid in _selectedHouses) {
+      final response = await http.delete(
+        Uri.parse('http://4.227.176.245:5000/favorites'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'member_id': memberId, 'hid': hid}),
+      );
+
+      if (response.statusCode == 200) {
+        FavoriteManager().favoriteHids.remove(hid);
+      } else {
+      }
+    }
+
+    setState(() {
+      _favoriteHousesFuture = Future.value(updatedHouses);
+      _selectedHouses.clear();
+      ismodifyclicked = false;
+    });
+
+    prefs.setStringList('favoriteHids', FavoriteManager().favoriteHids.toList());
+  } else {
+
+    
+  }
+}
+
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFECD8C9),
-        title: const Text(
-          '我的收藏',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      backgroundColor: const Color(0xFFECD8C9),
+      title: const Text(
+        '我的收藏',
+        style: TextStyle(fontWeight: FontWeight.bold),
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _favoriteHousesFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            
-            return Center(child: Text('Error loading favorites'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            
-            return Center(child: Text('尚未有收藏'));
-          } else {
-            
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                var house = snapshot.data![index];
-                return Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 130,
-                  margin: const EdgeInsets.only(
-                      left: 20, right: 20, top: 10, bottom: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.5),
-                        spreadRadius: 1,
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+      centerTitle: true,
+      actions: [
+        if (ismodifyclicked == false )
+          TextButton(
+            onPressed: () {
+              setState(() {
+                ismodifyclicked = !ismodifyclicked;
+              });
+            },
+            child: Text('編輯'),
+          ),
+        if (ismodifyclicked == true && _selectedHouses.isEmpty)
+          TextButton(
+            onPressed: () {
+              setState(() {
+                ismodifyclicked = !ismodifyclicked;
+              });
+            },
+            child: Text('完成'),
+          ),
+        if (ismodifyclicked == true && _selectedHouses.isNotEmpty)
+        TextButton(
+            onPressed: deleteSelectedFavorites,
+            child: Text('清除'),
+          ),
+      ],
+    ),
+    body: FutureBuilder<List<dynamic>>(
+      future: _favoriteHousesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error loading favorites'));
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('尚未有收藏'));
+        } else {
+          return Column(
+            children: [
+              if (ismodifyclicked)
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Checkbox(
+                        value: _selectedHouses.length == snapshot.data!.length,
+                        onChanged: (bool? value) {
+                          setState(() {
+                            if (value == true) {
+                              _selectedHouses.clear();
+                              for (var house in snapshot.data!) {
+                                _selectedHouses.add(house['hid']);
+                              }
+                            } else {
+                              _selectedHouses.clear();
+                            }
+                          });
+                        },
                       ),
+                      Text('全選'),
                     ],
                   ),
-                  child: GestureDetector(
-                    onTap: () {
-                      fetchHouseDetails(context, house['hid']);
-                    },
-                    child: Stack(
+                
+              Expanded(
+                child: ListView.builder(
+                  itemCount: snapshot.data!.length,
+                  itemBuilder: (context, index) {
+                    var house = snapshot.data![index];
+                    bool isSelected = _selectedHouses.contains(house['hid']);
+                    return Stack(
                       children: [
-                        Card(
-                          elevation: 0,
-                          margin: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      bottomLeft: Radius.circular(8),
-                                    ),
-                                    child: Image.network(
-                                      house['imageUrl'],
-                                      fit: BoxFit.cover,
-                                      width: MediaQuery.of(context).size.width *
-                                          0.35,
-                                      height: double.infinity,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/Logo.png', 
-                                          fit: BoxFit.cover,
-                                          width: MediaQuery.of(context).size.width *
-                                              0.35,
-                                          height: double.infinity,
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  Positioned(
-                                    top: 0,
-                                    right: 0,
-                                    child: IconButton(
-                                      icon: Icon(
-                                        Icons.favorite,
-                                        color: Colors.red,
-                                      ),
-                                      onPressed: () {
-                                        
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${house['pattern']} | ${house['title']}',
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '${house['size']}',
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.clip,
-                                      ),
-                                      Text(
-                                        '${house['city']} ${house['district']}',                                        
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        HouseCard(
+                          houseData: house,
+                          isFavorite: false,
+                          showFavoriteIcon: false,
+                          onFavoriteToggle: () {},
+                          onTap: () async {
+                            fetchHouseDetails(context, house['hid']);
+                          },
                         ),
-                        Positioned(
-                          bottom: 6,
-                          right: 8,
-                          child: Row(
-                            children: [
-                              Text(
-                                '${house['price']}',
-                                style: const TextStyle(
-                                  color: Color.fromARGB(255, 249, 58, 58),
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        if (ismodifyclicked)
+                          Positioned(
+                            top: 2,
+                            left: 10,
+                            child: Container(
+                              width: 20,
+                              height: 20,
+                              color: Colors.white,
+                              child: Checkbox(
+                                value: isSelected,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      _selectedHouses.add(house['hid']);
+                                    } else {
+                                      _selectedHouses.remove(house['hid']);
+                                    }
+                                  });
+                                },
                               ),
-                              const Text(
-                                ' 元/月',
-                                style: TextStyle(
-                                    color: Color.fromARGB(255, 249, 58, 58),
-                                    fontSize: 13),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
                       ],
-                    ),
-                  ),
-                );
-              },
-            );
-          }
-        },
-      ),
-    );
-  }
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        }
+      },
+    ),
+  );
+}
 }
