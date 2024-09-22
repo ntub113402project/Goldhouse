@@ -1,116 +1,72 @@
 import os
+import clip
+import torch
 import json
-import numpy as np
-from ultralytics import YOLO
 from PIL import Image
-from collections import Counter
+from transformers import BertTokenizer, BertModel
+from ultralytics import YOLO
+
+# 加載 CLIP 模型
+device = "cuda" if torch.cuda.is_available() else "cpu"
+clip_model, preprocess = clip.load('ViT-B/32', device=device)
+
+# 加載 BERT 模型與分詞器
+tokenizer = BertTokenizer.from_pretrained('bert-base-chinese')
+bert_model = BertModel.from_pretrained('bert-base-chinese').to(device)
 
 # 初始化 YOLO 模型
 yolo_model = YOLO("yolov8n.pt")
 
-# 使用 YOLO 偵測物件
-def detect_objects(image_path):
-    results = yolo_model(image_path)
-    image = Image.open(image_path)
-    
-    # 使用 names 屬性來獲取物品名稱，而非索引
-    labels = [yolo_model.names[int(cls)] for cls in results[0].boxes.cls.tolist()]  # YOLO 偵測到的物件名稱
-    return labels, image
+def detect_and_describe_image(image_path):
+    # 使用 YOLO 偵測物件
+    yolo_results = yolo_model(image_path)
+    yolo_labels = [yolo_model.names[int(cls)] for cls in yolo_results[0].boxes.cls.tolist()]
 
-# 提取圖片的主色
-def get_dominant_color(image):
-    try:
-        image = image.resize((50, 50))
-        pixels = np.array(image)
-        
-        if pixels.ndim == 3 and pixels.shape[2] == 3:
-            pixels = pixels.reshape(-1, 3)  # 將圖像像素展開
-        else:
-            print("不是 RGB 格式，跳過此圖片")
-            return None
-        
-        counter = Counter(map(tuple, pixels))
-        dominant_color = counter.most_common(1)[0][0]
-        return tuple(map(int, dominant_color))  # 確保轉換為整數類型
-    except Exception as e:
-        print(f"提取主要顏色時出錯: {e}，跳過此圖片")
-        return None
+    # 使用 CLIP 生成整體圖片描述
+    image = preprocess(Image.open(image_path)).unsqueeze(0).to(device)
+    clip_features = clip_model.encode_image(image)
+    clip_text = clip_model.decode(clip_features)
 
-# 提取圖片描述（紀錄物品和顏色）
-def generate_descriptions(image, labels):
-    descriptions = []
-    dominant_color = get_dominant_color(image)
-    
-    if dominant_color is not None:
-        color_text = f"RGB({dominant_color[0]}, {dominant_color[1]}, {dominant_color[2]})"
-        
-        for label in labels:
-            descriptions.append({
-                "object_label": label,  # 正確顯示物品名稱
-                "color_text": color_text  # 物品顏色
-            })
-    else:
-        print("無法提取主要顏色，跳過此圖片。")
-    
-    return descriptions
+    # 分詞並使用 BERT 處理 CLIP 的輸出
+    inputs = tokenizer(clip_text.split(), return_tensors="pt", padding=True).to(device)
+    bert_outputs = bert_model(**inputs)
+    bert_features = bert_outputs.last_hidden_state.mean(dim=1).tolist()
 
-# 提取圖片特徵並儲存至JSON
-def extract_image_features(hid, image_folder):
-    hid_folder = os.path.join(image_folder, str(hid))
-    if not os.path.exists(hid_folder):
-        print(f"跳過沒有圖片的 HID: {hid}")
-        return None
-
-    images = os.listdir(hid_folder)
-    if not images:
-        print(f"跳過沒有圖片的 HID: {hid}")
-        return None
-    
-    image_features = []
-    for img in images:
-        image_path = os.path.join(hid_folder, img)
-        labels, image = detect_objects(image_path)
-        VP_image = generate_descriptions(image, labels)
-
-        image_features.append({
-            "image_name": img,
-            "objects": VP_image
-        })
-    
     return {
-        "hid": hid,
-        "VP_images": image_features
+        "image": os.path.basename(image_path),
+        "yolo_objects": yolo_labels,
+        "clip_description": clip_text,
+        "bert_features": bert_features
     }
 
-# 提取前五筆圖片特徵並儲存至 JSON
-def extract_and_save_image_features(image_folder, output_image_json):
-    image_features = []
-    hids = os.listdir(image_folder)
-
-    for hid in hids:
-        hid_folder_path = os.path.join(image_folder, hid)
-        if os.path.isdir(hid_folder_path):
-            image_feature = extract_image_features(hid, image_folder)
-            if image_feature:
-                image_features.append(image_feature)
-            print(f"已經處理完 HID: {hid}")
-    
-    if image_features:
-        print(f"提取到的圖片數量: {len(image_features)}")
-        print(f"正在寫入文件: {output_image_json}")
-
-        os.makedirs(os.path.dirname(output_image_json), exist_ok=True)
-        with open(output_image_json, 'w', encoding='utf-8') as f:
-            json.dump(image_features, f, ensure_ascii=False, indent=4)
-        print(f"圖片特徵已存入 {output_image_json}")
-    else:
-        print("沒有提取任何圖片，無法寫入 JSON 文件。")
+def process_folder(folder_path):
+    results = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(('png', 'jpg', 'jpeg')):
+                image_path = os.path.join(root, file)
+                image_result = detect_and_describe_image(image_path)
+                results.append(image_result)
+    return results
 
 def main():
-    image_folder = "C:\\Users\\user\\OneDrive\\桌面\\gold_house"
-    output_image_json = "C:\\Users\\user\\OneDrive\\桌面\\image_features.json"
-    
-    extract_and_save_image_features(image_folder, output_image_json)
+    base_folder = "C:\\Users\\user\\OneDrive\\桌面\\gold_house"
+    output_path = "C:\\Users\\user\\OneDrive\\桌面\\image_features.json"
+    all_results = []
+
+    # 處理每個 HID 資料夾
+    for hid in os.listdir(base_folder):
+        folder_path = os.path.join(base_folder, hid)
+        if os.path.isdir(folder_path):
+            hid_results = process_folder(folder_path)
+            all_results.append({
+                "hid": hid,
+                "images": hid_results
+            })
+
+    # 保存結果到 JSON
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(all_results, f, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     main()
