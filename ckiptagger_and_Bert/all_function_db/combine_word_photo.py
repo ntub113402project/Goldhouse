@@ -30,8 +30,8 @@ def merge_text_and_image_features(text_json_path, image_json_path, output_json_p
 def main():
     # 定義 JSON 檔案的路徑
     text_json_path = "C:\\Users\\user\\OneDrive\\桌面\\text_features_1.json"
-    image_json_path = "C:\\Users\\user\\OneDrive\\桌面\\image_features_1.json"
-    output_json_path = "C:\\Users\\user\\OneDrive\\桌面\\merged_features_1.json"
+    image_json_path = "C:\\Users\\user\\OneDrive\\桌面\\image_features.json"
+    output_json_path = "C:\\Users\\user\\OneDrive\\桌面\\merged_features.json"
 
     # 合併 JSON 檔案
     merge_text_and_image_features(text_json_path, image_json_path, output_json_path)

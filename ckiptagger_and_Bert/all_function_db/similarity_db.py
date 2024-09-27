@@ -2,6 +2,7 @@ import json
 import uuid
 import torch
 import torch.nn.functional as F
+from sklearn.metrics.pairwise import cosine_similarity
 
 # 加載提取的特徵 JSON 文件
 def load_features(json_file):
@@ -25,7 +26,7 @@ def cosine_similarity(v1, v2):
     # 計算批量餘弦相似度並返回平均值
     return F.cosine_similarity(v1, v2, dim=1).mean().item()
 
-def compare_text_features(item1, item2, text_threshold=0.95):
+def compare_text_features(item1, item2, text_threshold=1):
     try:
         # 比較 VW_address
         address_sim = cosine_similarity(item1['VW_address'], item2['VW_address'])
@@ -34,7 +35,7 @@ def compare_text_features(item1, item2, text_threshold=0.95):
 
         # 比較其他文字特徵
         pattern_sim = cosine_similarity(item1['VW_pattern'], item2['VW_pattern']) > 0.9
-        size_sim = cosine_similarity(item1['VW_size'], item2['VW_size']) > 0.95
+        size_sim = cosine_similarity(item1['VW_size'], item2['VW_size']) >= 1 
         layer_sim = cosine_similarity(item1['VW_layer'], item2['VW_layer']) > 0.95
 
         return pattern_sim and size_sim and layer_sim
@@ -67,21 +68,31 @@ def compare_images(img1_objects, img2_objects, image_threshold=0.5):
     # 確保相似物件數量超過總物品數量的60%
     return matched_items / max_items >= image_threshold
 
-# 比較兩個房屋之間的圖片
-def compare_houses_images(item1, item2, image_threshold=0.4):
-    img1_list = item1['VP_images']
-    img2_list = item2['VP_images']
-    similar_images = 0
-    
-    # 遍歷兩個房屋中的每張圖片，進行逐一比對
-    for img1 in img1_list:
-        for img2 in img2_list:
-            if compare_images(img1['objects'], img2['objects']):
-                similar_images += 1
-                break  # 如果該圖片相似，則不再比對該圖片與其他圖片的失敗
+# 比較兩張圖片的物品和顏色
+def compare_images(img1_objects, img2_objects, bert_threshold=0.6, color_tolerance=50):
+    matched_items = 0
+    max_items = max(len(img1_objects), len(img2_objects))
 
-    # 如果相似的圖片數量佔比超過 image_threshold，則認為這兩個房屋相似
-    return similar_images / max(len(img1_list), len(img2_list)) >= image_threshold
+    # 如果 max_items 為 0，直接返回 False，避免除以 0
+    if max_items == 0:
+        return False
+
+    # 比對物品的 BERT 向量相似性和顏色相似性
+    for obj1 in img1_objects:
+        for obj2 in img2_objects:
+            # 計算 BERT 向量的餘弦相似度
+            bert_similarity = cosine_similarity(obj1['bert_features'], obj2['bert_features'])
+
+            # 比較 RGB 顏色的相似性
+            color_similarity = compare_colors(obj1['color_text'], obj2['color_text'], tolerance=color_tolerance)
+
+            # 如果 BERT 向量相似度和顏色相似性都達標，則認為物件相似
+            if bert_similarity >= bert_threshold and color_similarity:
+                matched_items += 1
+                break  # 找到相似物品後不再進行後續比對
+
+    # 確保相似物件數量超過總物品數量的60%
+    return matched_items / max_items >= 0.6
 
 def find_similar_items(data, text_threshold=0.8, image_threshold=0.5):
     same_map = {}  # 用來存儲每個房子的 same 編號
@@ -109,23 +120,35 @@ def find_similar_items(data, text_threshold=0.8, image_threshold=0.5):
             # 先進行文字比對
             if compare_text_features(item1, item2, text_threshold):
                 
-                # 如果文字比對成功，再進行圖片比對
-                if compare_houses_images(item1, item2, image_threshold):
-                    found_similar = True
-                    similar_pairs.append((item1['hid'], item2['hid']))  # 記錄相同的房屋
-                    
-                    # 檢查是否已有 same_id，沒有則生成
-                    if item1['hid'] not in same_map and item2['hid'] not in same_map:
-                        same_map[item1['hid']] = same_id_counter
-                        same_map[item2['hid']] = same_id_counter
-                        print(f"為房屋 {item1['hid']} 和 {item2['hid']} 分配 same_id: {same_id_counter}")  # 列印分配的 same_id
-                        same_id_counter += 1  # 編號自增
-                    elif item1['hid'] in same_map:
-                        same_map[item2['hid']] = same_map[item1['hid']]
-                        print(f"為房屋 {item2['hid']} 分配 same_id: {same_map[item1['hid']]}")  # 列印分配的 same_id
-                    else:
-                        same_map[item1['hid']] = same_map[item2['hid']]
-                        print(f"為房屋 {item1['hid']} 分配 same_id: {same_map[item2['hid']]}")  # 列印分配的 same_id
+                # 如果文字比對成功，檢查圖片部分
+                if 'VP_images' not in item1 or 'VP_images' not in item2:
+                    # 如果其中一個房屋沒有圖片，則直接判定為不同
+                    continue
+                
+                # 檢查圖片是否有物件，如果圖片中沒有物件則跳過該圖片繼續比對其他圖片
+                for img1 in item1['VP_images']:
+                    for img2 in item2['VP_images']:
+                        if 'objects' not in img1 or not img1['objects'] or 'objects' not in img2 or not img2['objects']:
+                            # 如果某張圖片沒有物件，則跳過該圖片繼續比對其他圖片
+                            continue
+
+                        # 如果圖片有物件，進行物件比對
+                        if compare_images(img1['objects'], img2['objects'], image_threshold):
+                            found_similar = True
+                            similar_pairs.append((item1['hid'], item2['hid']))  # 記錄相同的房屋
+                            
+                            # 檢查是否已有 same_id，沒有則生成
+                            if item1['hid'] not in same_map and item2['hid'] not in same_map:
+                                same_map[item1['hid']] = same_id_counter
+                                same_map[item2['hid']] = same_id_counter
+                                print(f"為房屋 {item1['hid']} 和 {item2['hid']} 分配 same_id: {same_id_counter}")  # 列印分配的 same_id
+                                same_id_counter += 1  # 編號自增
+                            elif item1['hid'] in same_map:
+                                same_map[item2['hid']] = same_map[item1['hid']]
+                                print(f"為房屋 {item2['hid']} 分配 same_id: {same_map[item1['hid']]}")  # 列印分配的 same_id
+                            else:
+                                same_map[item1['hid']] = same_map[item2['hid']]
+                                print(f"為房屋 {item1['hid']} 分配 same_id: {same_map[item2['hid']]}")  # 列印分配的 same_id
             
         # 如果沒有找到相似房屋，設置 same 為 "none"
         if not found_similar:
@@ -138,6 +161,17 @@ def find_similar_items(data, text_threshold=0.8, image_threshold=0.5):
 
     return same_map, similar_pairs
 
+# 將結果存入新的 JSON 文件
+def save_similarities_to_json(same_map, output_json):
+    # 構建只包含 hid 和 same 的結果
+    result = [{"hid": hid, "same": same} for hid, same in same_map.items()]
+
+    # 將結果寫入新的 JSON 文件
+    with open(output_json, 'w', encoding='utf-8') as f:
+        json.dump(result, f, ensure_ascii=False, indent=4)
+
+    print(f"結果已成功寫入 {output_json}")
+
 # 打印相同房屋對
 def print_similar_pairs(similar_pairs):
     print("相同的房屋對：")
@@ -146,7 +180,7 @@ def print_similar_pairs(similar_pairs):
 
 def main():
     # 加載提取的特徵
-    json_file = "C:\\Users\\user\\OneDrive\\桌面\\merged_features_1.json"
+    json_file = "C:\\Users\\user\\OneDrive\\桌面\\merged_features.json"
     output_json = "C:\\Users\\user\\OneDrive\\桌面\\similar_houses.json"
     
     data = load_features(json_file)
