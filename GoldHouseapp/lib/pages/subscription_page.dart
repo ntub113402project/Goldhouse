@@ -250,14 +250,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       final subscription = subscriptions[index];
                       return Container(
                         decoration: BoxDecoration(
+                          color: Color.fromARGB(255, 247, 236, 205),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Color.fromARGB(255, 234, 226, 206)
+                              color: Color.fromARGB(255, 177, 177, 162)
                                   .withOpacity(0.5),
                               spreadRadius: 1,
                               blurRadius: 4,
-                              offset: const Offset(0, 5),
+                              offset: const Offset(5, 5),
                             ),
                           ],
                         ),
@@ -283,7 +284,8 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                   ),
+                                      color: Color(0xFF613F26), 
+                                    ),
                                   ),
                                   Text(
                                     style: TextStyle(fontSize: 16),
@@ -298,33 +300,23 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                 },
                               ),
                               onTap: () async {
-                                int? subscriptionId =
-                                    subscription['subscription_id'];
-                                if (subscriptionId != null) {
-                                  await _fetchProperties(subscription, index);
-                                  Navigator.of(context)
-                                      .push(
-                                    MaterialPageRoute(
-                                      builder: (context) => PropertyDetailsPage(
-                                        properties: subscription['properties'],
-                                        subscription: subscription,
-                                        subscriptionId: subscriptionId,
-                                        onReturn: _updateLastCheckTime,
-                                      ),
-                                    ),
-                                  )
-                                      .then((_) async {
-                                    await _updateLastCheckTime(subscriptionId);
-                                    SharedPreferences prefs =
-                                        await SharedPreferences.getInstance();
-                                    prefs.setString('last_check_time',
-                                        DateTime.now().toUtc().toString());
-                                  });
-                                } else {
-                                  print('subscription_id is null');
-                                }
-                              },
-                            ),
+  int? subscriptionId = subscription['subscription_id'];
+  if (subscriptionId != null) {
+    await _fetchProperties(subscription, index);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PropertyDetailsPage(
+          properties: subscription['properties'],
+          subscription: subscription,
+          subscriptionId: subscriptionId,
+          onReturn: _updateLastCheckTime,
+        ),
+      ),
+    );
+  } else {
+    print('subscription_id is null');
+  }
+},)
                           ),
                         ),
                       );

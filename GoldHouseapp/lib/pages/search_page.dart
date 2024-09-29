@@ -716,7 +716,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
   }
 
   void _otherSelectionBottomSheet(BuildContext context) {
-    List<String> options = ['不限', '可養寵物', '可開伙', '限男', '限女'];
+    List<String> options = ['不限', '可養寵物', '可開伙', '限男', '限女','過濾重複刊登'];
     List<String> selectedOptions = List.from(
         _selectedOtherOptions.isEmpty ? ['不限'] : _selectedOtherOptions);
 
@@ -801,6 +801,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
       },
     );
   }
+  
 
   @override
   Widget build(BuildContext context) {

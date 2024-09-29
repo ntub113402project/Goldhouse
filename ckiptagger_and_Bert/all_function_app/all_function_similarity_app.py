@@ -121,7 +121,7 @@ def compare_and_generate_same_id(hid, item, data, text_threshold=0.8, image_thre
 
 def main():
     # 圖片儲存路徑暫時待定
-    image_folder = ""  # 圖片儲存路徑未定
+    image_folder = "C:\\jpg"  # 圖片儲存路徑未定
     
     # 連接到 ghdetail 資料庫
     connection = connect_to_house_database()
