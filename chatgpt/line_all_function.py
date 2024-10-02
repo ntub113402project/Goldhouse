@@ -25,6 +25,8 @@ handler = WebhookHandler('3d91af865d2568e735554c9c99b8cb01')
 # ngrok
 ngrok.set_auth_token("2kSMB4R877gUNnX5eO2VhtLd9qx_7jg36onQ9bnn6YjMgfYdG")
 
+user_states = {}
+
 # 斷開任何現有的隧道
 tunnels = ngrok.get_tunnels()
 for tunnel in tunnels:
@@ -81,7 +83,6 @@ def generate_description(hid):
 
     return " ".join(descriptions)
 
-# GPT 分析功能
 def gpt_analyze_input(message, user_id):
     try:
         # 專業系統消息
@@ -97,32 +98,36 @@ def gpt_analyze_input(message, user_id):
             "總之，你的主要目標是幫助用戶解決具體的租屋問題，並在需要時指引他們聯繫房東。"
         )
 
-        # 判斷是否查詢租屋知識或房屋的具體信息
-        if "租屋知識" in message or "租屋相關" in message:
-            # 如果用戶詢問租屋相關知識
+        # 判斷用戶是否輸入了 "hid: 編號"
+        hid_match = re.match(r'hid:\s*(\d+)', message)
+        if hid_match:
+            # 如果用戶輸入了 "hid:編號"，重置上下文並更新用戶狀態
+            hid = hid_match.group(1)
+            user_states[user_id] = {'hid': hid}
+            description = generate_description(hid)
+            if "未找到與該HID相關的房屋資料" in description:
+                return description
+            # 生成新的 prompt，基於新的房屋資訊
+            prompt = (
+                f"以下是房屋的相關資訊：\n{description}\n\n"
+                f"使用者提問：{message}\n\n"
+                "請根據房屋資訊和使用者提問提供適當的回覆。如果數據不足以回答，建議用戶聯繫房東。"
+            )
+        elif user_states.get(user_id) and user_states[user_id].get('hid'):
+            # 如果用戶之前已輸入過 HID，則基於之前的房屋信息繼續回答
+            hid = user_states[user_id]['hid']
+            description = generate_description(hid)
+            prompt = (
+                f"以下是房屋的相關資訊：\n{description}\n\n"
+                f"使用者提問：{message}\n\n"
+                "請根據房屋資訊和使用者提問提供適當的回覆。如果數據不足以回答，建議用戶聯繫房東。"
+            )
+        else:
+            # 如果不包含 HID，視為租屋知識或智能搜尋問題
             prompt = (
                 f"User message: {message}\n\n"
                 "根據這個網站提供的信息『https://www.dd-room.com/article/611e1d8ef0e5483bb5447b3b』，給出準確且專業的回應。"
             )
-        else:
-            # 如果用戶詢問房屋的具體信息
-            hid_match = re.search(r'hid:\s*(\d+)', message)
-            if hid_match:
-                hid = hid_match.group(1)
-                description = generate_description(hid)
-                if "未找到與該HID相關的房屋資料" in description:
-                    return description
-                prompt = (
-                    f"以下是房屋的相關資訊：\n{description}\n\n"
-                    f"使用者提問：{message}\n\n"
-                    "請根據房屋資訊和使用者提問提供適當的回覆。如果數據不足以回答，建議用戶聯繫房東。"
-                )
-            else:
-                # 如果不包含hid，視為租屋知識問題
-                prompt = (
-                    f"User message: {message}\n\n"
-                    "根據這個網站提供的信息『https://www.dd-room.com/article/611e1d8ef0e5483bb5447b3b』，給出準確且專業的回應。"
-                )
 
         # 調用 OpenAI API 生成回應
         response = openai.ChatCompletion.create(
@@ -135,8 +140,8 @@ def gpt_analyze_input(message, user_id):
 
         reply_content = response['choices'][0]['message']['content']
 
-        # 添加「根據您所要搜尋的房屋資訊」到回應開頭（僅當查詢房屋信息時）
-        if "hid:" in message:
+        # 如果用戶剛剛輸入了 "hid:編號"，則在回應中加上提示信息
+        if hid_match:
             reply_content = "根據您所要搜尋的房屋資訊，" + reply_content
 
         return reply_content
@@ -144,6 +149,7 @@ def gpt_analyze_input(message, user_id):
     except Exception as e:
         print(f"Error occurred: {e}")  # 打印錯誤信息
         return "在處理您的請求時發生錯誤。"
+
 
 # 智慧搜尋功能
 def find_houses_by_criteria(message):
@@ -240,33 +246,36 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    user_id = event.source.user_id  # 獲取用戶 ID
-    user_message = event.message.text  # 獲取用戶消息
+    user_id = event.source.user_id
+    user_message = event.message.text.strip()
 
-    print("Received message:", user_message)  # 打印接收到的消息
+    # 初始化用戶狀態
+    if user_id not in user_states:
+        user_states[user_id] = {'hid': None}
 
-    # 清理用戶狀態或結果，避免前一條訊息的影響
-    user_states[user_id] = {
-        'user_valid': False,
-        'hid': None,
-        'messages': []
-    }
-
-    if "hid:" in user_message:
-        # 回答房屋問題
-        response_message = gpt_analyze_input(user_message, user_id)
-    elif "租屋" in user_message or "租房" in user_message:
-        # 回答租屋知識問題
-        response_message = gpt_analyze_input(user_message, user_id)
+    # 判斷用戶是否輸入了 "hid: 編號"
+    hid_match = re.match(r'hid:\s*(\d+)', user_message)
+    if hid_match:
+        # 更新用戶的 HID 狀態並重置上下文
+        user_states[user_id] = {'hid': hid_match.group(1)}
+        hid = user_states[user_id]['hid']
+        response_message = generate_description(hid)
     else:
-        # 處理查詢特定條件的房屋問題
-        response_message = find_houses_by_criteria(user_message)
+        # 判斷是否存在之前的 HID
+        if user_states[user_id]['hid']:
+            # 用戶繼續提問房屋相關問題
+            hid = user_states[user_id]['hid']
+            description = generate_description(hid)
+            prompt = f"以下是房屋的相關資訊：\n{description}\n\n使用者提問：{user_message}\n\n請根據房屋資訊和使用者提問提供適當的回覆。如果數據不足以回答，建議用戶聯繫房東。"
+            response_message = gpt_analyze_input(prompt, user_id)
+        else:
+            # 沒有之前的 HID，交給 GPT 做智慧搜尋或租屋相關知識的回答
+            response_message = gpt_analyze_input(user_message, user_id)
 
     # 調試：打印當前用戶狀態
     print(f"User states after processing: {user_states}")
 
-    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response_message))  # 回覆用戶消息
-
+    line_bot_api.reply_message(event.reply_token, TextSendMessage(text=response_message))
 
 if __name__ == "__main__":
     app.run()  # 運行 Flask 應用
