@@ -22,8 +22,8 @@ openai.api_key = ""
 graph = Graph("bolt://localhost:7687", auth=("neo4j", "12345678"))
 
 # Line Bot API
-line_bot_api = LineBotApi('oohH26PwqEwNLSTT9fQJ9DdqfBXd63TnFNVWb32ZuzL6wLsYJx09guQOh2KUCKEmXUpCKu4dbAu6hA5b4A4JoBS57j202fZ/zl2BFjjKVAVkujU9wTy+zdBddBDrnNdDCGnRkR5pOFThPFEyoIGAggdB04t89/1O/w1cDnyilFU=')
-handler = WebhookHandler('3d91af865d2568e735554c9c99b8cb01')
+line_bot_api = LineBotApi('roSdGg4QLioRqB12KU6oTUiv08omTL28Vc2arQ2MrfPYSyDW0uKqZJj6B0TcZPBuXUpCKu4dbAu6hA5b4A4JoBS57j202fZ/zl2BFjjKVAWZKz1W0atGTVYNVkpQL9R5kyM1xb0g36ncG1gt7XwYzQdB04t89/1O/w1cDnyilFU=/zl2BFjjKVAWZKz1W0atGTVYNVkpQL9R5kyM1xb0g36ncG1gt7XwYzQdB04t89/1O/w1cDnyilFU=/zl2BFjjKVAVkujU9wTy+zdBddBDrnNdDCGnRkR5pOFThPFEyoIGAggdB04t89/1O/w1cDnyilFU=')
+handler = WebhookHandler('cc63231b861c6d4f908cc904d6504fee')
 
 # ngrok
 ngrok.set_auth_token("2kSMB4R877gUNnX5eO2VhtLd9qx_7jg36onQ9bnn6YjMgfYdG")
