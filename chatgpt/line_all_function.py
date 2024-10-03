@@ -8,11 +8,8 @@ from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import TextSendMessage, MessageEvent, TextMessage
-from py2neo import Graph
 import secrets
 import re
-from linebot.v3.messaging import MessagingApi
-from linebot.v3.webhook import WebhookHandler
 
 
 # 設定 OpenAI API 金鑰
@@ -28,16 +25,15 @@ handler = WebhookHandler('cc63231b861c6d4f908cc904d6504fee')
 # ngrok
 ngrok.set_auth_token("2kSMB4R877gUNnX5eO2VhtLd9qx_7jg36onQ9bnn6YjMgfYdG")
 
-user_states = {}
-
 # 斷開任何現有的隧道
 tunnels = ngrok.get_tunnels()
 for tunnel in tunnels:
     ngrok.disconnect(tunnel.public_url)
 
 # 連接新隧道
-public_url = ngrok.connect(5000)
-print("Public URL:", public_url)
+public_url = ngrok.connect(5000).public_url
+callback_url = f"{public_url}/callback"
+print("Callback URL:", callback_url)
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)  # 設置 Flask 應用的隨機秘密金鑰
@@ -94,14 +90,14 @@ def gpt_analyze_input(message, user_id):
         # 專業系統消息
         system_message = (
             "你是一個專業的房屋中介助手，負責回答租屋相關問題，且一律用繁體中文回答。"
-            "你的回答應該簡潔、明確，直接解答用戶的問題。"
+            "你的回答應該簡潔、明確，直接解答問題。"
             "當用戶問到關於房屋的具體細節（例如價格、位置、設施等）時，請根據房屋的主頁資訊進行回答。"
             "如果用戶詢問的問題在房屋的主頁中沒有答案，請建議用戶聯繫房東以獲取更多資訊。"
             "當用戶提問涉及到無法回答的範疇，例如法律建議、詳細合同內容或技術支持時，也請建議他們直接聯繫房東或相關專業人士。"
             "此外，你也可以回答關於租屋相關知識的問題，根據這個網站的信息 'https://www.dd-room.com/article/611e1d8ef0e5483bb5447b3b'。"
             "請確保你的回答專注於租屋相關的信息，並避免提供無關的訊息。"
             "回答時不要提及參考資料來源，也不要說你是根據什麼資料做出回答的。"
-            "總之，你的主要目標是幫助用戶解決具體的租屋問題，並在需要時指引他們聯繫房東。"
+            "並在需要時指引他們聯繫房東。"
         )
 
         # 判斷用戶是否輸入了 "hid: 編號"
@@ -157,7 +153,6 @@ def gpt_analyze_input(message, user_id):
         return "在處理您的請求時發生錯誤。"
 
 
-# 智慧搜尋功能
 def find_houses_by_criteria(message):
     try:
         # 使用正則表達式提取可能的查詢條件
@@ -226,15 +221,15 @@ def find_houses_by_criteria(message):
         top_houses = house_distances[:10]
 
         if top_houses:
-            hids_list = "\n".join([f"{i+1}. 編號 {hid}" for i, (hid, _) in enumerate(top_houses)])
-            return f"根據您的需求，以下房子較符合您的條件：\n{hids_list}如都無符合您的需求，請使用APP內的搜尋"
+            # 使用超鏈接提供每個房屋的詳情
+            hids_list = "\n".join([f"{i+1}. [編號 {hid}](http://4.227.176.245/house_detail?hid={hid})" for i, (hid, _) in enumerate(top_houses)])
+            return f"根據您的需求，以下房子較符合您的條件：\n{hids_list}\n如都無符合您的需求，請使用APP內的搜尋"
         else:
             return "沒有符合您描述的房子。"
 
     except Exception as e:
         print(f"Error occurred: {e}")  # 打印錯誤信息
         return "在處理您的請求時發生錯誤。"
-
 
 # Linebot 回調
 @app.route("/callback", methods=['POST'])
