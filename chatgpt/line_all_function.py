@@ -42,7 +42,6 @@ app.secret_key = secrets.token_hex(16)  # 設置 Flask 應用的隨機秘密金�
 # 用於儲存使用者狀態的全域字典
 user_states = {}
 
-# 生成房屋描述的函數
 def generate_description(hid):
     query = f"""
     MATCH (h:Property {{hid: '{hid}'}})
@@ -81,7 +80,11 @@ def generate_description(hid):
         if store_names:
             descriptions.append(f"附近有以下店家：{', '.join(store_names)}。")
 
+    # 添加超連結部分
+    descriptions.append(f"查看詳細資料：[點擊這裡](http://4.227.176.245/house_detail?hid={hid})")
+
     return " ".join(descriptions)
+
 
 def gpt_analyze_input(message, user_id):
     try:
