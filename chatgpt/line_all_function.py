@@ -11,6 +11,9 @@ from linebot.models import TextSendMessage, MessageEvent, TextMessage
 from py2neo import Graph
 import secrets
 import re
+from linebot.v3.messaging import MessagingApi
+from linebot.v3.webhook import WebhookHandler
+
 
 # 設定 OpenAI API 金鑰
 openai.api_key = ""
