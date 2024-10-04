@@ -21,13 +21,8 @@ stop_words_file = 'cn_stopwords.txt' #* 分詞表 path
 model_file = 'kmeans_model.pkl' #* 模型 path
 model_data_file = 'model_data.json' #* 模型資料 path
 new_data_file = 'data.json' #* 新增資料 path
-number_of_cluster = 8 #* 特徵數量
-graph3D_features =[] #* 特徵 3D 映射 (選三類)
+number_of_cluster = 100 #* 特徵數量
 #? 資料型態：[hid, f1, f2, f3, ...]
-
-
-#* 選擇處理 Nan 的流程 (choose 1)
-
 
 #todo load file (讀取模型, 模型資料, 新增資料, 分詞表)
 #* 讀取 cn_stopwords.txt 分詞表
@@ -71,15 +66,27 @@ def extract_floor_info(layer):
     try:
         if '/' in layer:
             current, total = layer.split('/')
-            current = current.replace('F', '').strip()
-            total = total.replace('F', '').strip()
-            current = int(current) if current.isdigit() else np.nan
-            total = int(total) if total.isdigit() else np.nan
+
+            #* 處理 total
+            total = int(total.replace('F', '').strip()) if total.replace('F', '').isdigit() else np.nan
+
+            #* 處理 current
+            if "~" in current or current == "整棟": #* "整棟" or "~" 歸類為 0
+                current = 0
+            elif current == "頂層加蓋":
+                current = total + 1
+            elif "B" in current:
+                current = -int(current.replace('B', '').strip()) if current[1:].isdigit() else np.nan
+            elif "F" in current:
+                current = int(current.replace('F', '').strip()) if current.replace('F', '').isdigit() else np.nan
+            else:
+                current = np.nan
+
             return current, total
         else:
-            return 0, 0 #意外情況
+            return np.nan, np.nan #意外情況
     except (ValueError, AttributeError, IndexError):
-        return 0, 0 #意外情況
+        return np.nan, np.nan #意外情況
 
 #* 處理 servicelist
 def servicelist_to_vector(servicelist):
@@ -111,7 +118,7 @@ for i, item in enumerate(new_data):
     servicelist_vector = servicelist_to_vector(item['servicelist'])
 
     #* feature selected pattern：[hid, f1, f2, f3, ...]
-    feature_vector = [hid, price, size, layer_current, layer_total] + servicelist_vector  # 展平 servicelist_vector
+    feature_vector = [hid, price, size, layer_current, layer_total] #+ servicelist_vector  # 展平 servicelist_vector
     # feature_vector.extend(address_matrix[i])
     # feature_vector.extend(description_matrix[i])
     # feature_vector.extend(title_matrix[i])
@@ -135,10 +142,11 @@ print(f"共有 {nan_data_count} 筆資料包含 NaN")
 #* 轉換為 numpy, 提取特徵部分
 feature_data = np.array([data[1:] for data in model_data])
 
-#! 參數配置 for Nan replacement
+#! 參數配置 for Nan replacement method
 #* 選擇每個特徵填充 Nan 的方法 (不包含 hid column)
 #* mode, mean, median, zero, constant
-nanlist = [0, 0, 'mean', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+#nanlist = [0, 0, 'mean', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+nanlist = [0, 0, 'mean', 0]
 
 #* 檢查 nanlist 的長度
 if len(nanlist) != feature_data.shape[1]:
@@ -184,7 +192,15 @@ for i in range(feature_data.shape[1]):
 # 合并处理后的特征数据
 feature_data = np.column_stack(processed_features)
 
-#* 训练 MiniBatchKMeans 模型
+#* print all data
+np.set_printoptions(
+    threshold=np.inf,
+    suppress=True,
+    formatter={'float_kind': lambda x: format(x, 'g')}
+)
+print(feature_data)
+
+#* 訓練 MiniBatchKMeans 模型
 kmeans_loaded = MiniBatchKMeans(n_clusters=number_of_cluster, random_state=42, batch_size=10)
 kmeans_loaded.fit(feature_data)
 
