@@ -30,3 +30,17 @@ MATCH (p:Property)-[:HAS_PATTERN]->(pt:Pattern),
 RETURN p, pt, t, s, pr, b, sub, store
 LIMIT 100
 
+MATCH (p:Property)-[:HAS_PATTERN]->(pt:Pattern),
+      (p)-[:HAS_TYPE]->(t:Type),
+      (p)-[:IN_SIZE_RANGE]->(s:SizeRange),
+      (p)-[:IN_PRICE_RANGE]->(pr:PriceRange),
+      (p)-[:NEAR_BUS]->(b:Bus),
+      (p)-[:NEAR_SUBWAY]->(sub:Subway),
+      (p)-[:NEAR_STORE]->(store:Store)
+OPTIONAL MATCH (p)-[:HAS_DEVICE]->(d:Device)
+WITH p, pt, t, s, pr, b, sub, store, COLLECT(d)[..3] AS devices
+RETURN p, pt, t, s, pr, b, sub, store, devices
+LIMIT 100
+
+
+
