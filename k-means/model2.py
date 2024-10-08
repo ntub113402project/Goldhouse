@@ -8,11 +8,11 @@ from sklearn.cluster import KMeans
 
 #! 使用須知
 #* 1. 用於模型訓練的資料必須和物件資料匹配才能做 mapping
-#* 2. 必須包含 cluster(物件對應的cluster), kmeans_model_sample(是否用於模型調整) 欄位
+#* 2. database table 必須包含 cluster(物件對應的cluster), kmeans_model_sample(是否用於模型調整) 欄位
 #* 3. 模型必須先訓練完後放入資料夾中, 程式才能夠做 mapping
 #* 4. 提供四個功能：mapping data, retrain model, train model, clean cluster
 #* 5. 每一筆 datalist 第一欄必須為 hid, hid 並不會納入 kmeans 計算, 但會用於與資料庫溝通
-#* 6. 原始資料和模型一定要放在同一個資料夾下才能運作, 刪掉會出事 
+#* 6. 原始資料和模型一定要放在同一個資料夾下才能運作, 刪掉會出事
 
 #todo 輸出編碼 UTF-8
 sys.stdout.reconfigure(encoding='utf-8')
@@ -167,7 +167,7 @@ def clean_cluster_all():
     else:
         print(f"模型檔案 {kmeans_model_path} 不存在。")
 
-#todo train new model 
+#todo train new model
 def train_kmeans_model():
     #* 讀取原始資料
     if os.path.exists(origin_data_path):
@@ -204,11 +204,36 @@ def unmodel_hid_list():
     cursor.execute("SELECT hid FROM new_housedetail WHERE kmeans_model_sample = 0")
     hid_list = [row[0] for row in cursor.fetchall()]
     return hid_list
-    
+
+#todo mapping mapping data (not in database) to satisfied cluster
+#* 需要提供所有特徵資料在 list 中, 並且一次只能識別一筆資料. 並且不會有資料庫存取
+def mapping_to_cluster2(data): #* Given a data with needed features
+    #* 讀取模型
+    if os.path.exists(kmeans_model_path):
+        kmeans_model = joblib.load(kmeans_model_path)
+        print("model exists")
+    else:
+        print(f"model：{kmeans_model_path} does not exists")
+
+    #* mapping cluster
+    hid = data[0]
+    layer_current, layer_total = extract_floor_info(data[3])
+    size = float(data[2].replace('坪', '').strip())
+    feature_data = [data[1],size,layer_current,layer_total]
+    cluster = int(kmeans_model.predict(np.array(feature_data).reshape(1, -1))[0]) #* mapping
+    print(f"Success mapping {hid} to cluster {cluster}")
+    return cluster
+
 #todo main
-clean_cluster_all()
-train_kmeans_model()
-retrain_kmeans_model(unmodel_hid_list())
+mapping_to_cluster2([
+        "16238818",
+        31200,
+        "33.46坪",
+        "5F/5F"
+    ])
+# clean_cluster_all()
+# train_kmeans_model()
+# retrain_kmeans_model(unmodel_hid_list())
 
 # clean_cluster_all()
 # mapping_to_cluster(unmapping_hid_list())
