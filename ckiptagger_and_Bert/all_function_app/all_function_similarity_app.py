@@ -59,13 +59,26 @@ def get_dominant_color(image):
     dominant_color = counter.most_common(1)[0][0]
     return dominant_color
 
+# 計算餘弦相似度
+def cosine_similarity(v1, v2):
+    v1 = torch.tensor(v1, dtype=torch.float32)
+    v2 = torch.tensor(v2, dtype=torch.float32)
+    
+    if v1.shape != v2.shape:
+        raise ValueError(f"向量形狀不匹配: v1 {v1.shape}, v2 {v2.shape}")
+    
+    v1 = v1.unsqueeze(0)
+    v2 = v2.unsqueeze(0)
+
+    return F.cosine_similarity(v1, v2, dim=1).mean().item()
+
 # 處理文字數據，並存到資料庫
 def process_text_data(hid, item):
     connection = connect_to_house_database()
     cursor = connection.cursor()
 
     # 文字 WS 與 BERT
-    address_text = ' '.join(item['positionround'].get('address', []))
+    address_text = item['positionround'].get('address', '').strip()
     address_tokens = ws([address_text])
     VW_address = get_bert_embedding(' '.join(address_tokens[0]), tokenizer_zh, bert_model_zh)
 
@@ -74,17 +87,82 @@ def process_text_data(hid, item):
     VW_pattern = get_bert_embedding(' '.join(pattern_tokens[0]), tokenizer_zh, bert_model_zh)
 
     VW_size = get_bert_embedding(item['houseinfo']['size'], tokenizer_zh, bert_model_zh)
-    VW_layer = get_bert_embedding(item['houseinfo']['layer'], tokenizer_zh, bert_model_zh)
+    VW_type = get_bert_embedding(item['houseinfo']['type'], tokenizer_zh, bert_model_zh)
 
-    VW_servicelist_items = ' '.join([s.get('service', '') for s in item['servicelist']])
-    VW_servicelist = get_bert_embedding(VW_servicelist_items, tokenizer_zh, bert_model_zh)
+    subway_text = ' '.join(item['positionround'].get('subway', []))
+    subway_tokens = ws([subway_text])
+    VW_subway = get_bert_embedding(' '.join(subway_tokens[0]), tokenizer_zh, bert_model_zh)
+
+    bus_text = ' '.join(item['positionround'].get('bus', []))
+    bus_tokens = ws([bus_text])
+    VW_bus = get_bert_embedding(' '.join(bus_tokens[0]), tokenizer_zh, bert_model_zh)
+
+    # 提取 servicelist 中 "avaliable": true 的設備
+    available_devices = [device_item['device'] for device_item in item['servicelist'] if device_item.get('avaliable', False)]
+    VW_servicelist = get_bert_embedding(' '.join(available_devices), tokenizer_zh, bert_model_zh)
 
     # 儲存到資料庫
-    cursor.execute("INSERT INTO text_features (hid, VW_address, VW_pattern, VW_size, VW_layer, VW_servicelist) VALUES (%s, %s, %s, %s, %s, %s)",
-                   (hid, json.dumps(VW_address), json.dumps(VW_pattern), json.dumps(VW_size), json.dumps(VW_layer), json.dumps(VW_servicelist)))
+    cursor.execute("INSERT INTO text_features (hid, VW_address, VW_pattern, VW_size, VW_type, VW_subway, VW_bus, VW_servicelist) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                   (hid, json.dumps(VW_address), json.dumps(VW_pattern), json.dumps(VW_size), json.dumps(VW_type), json.dumps(VW_subway), json.dumps(VW_bus), json.dumps(VW_servicelist)))
     connection.commit()
     cursor.close()
     connection.close()
+
+# 比較文字特徵
+def compare_text_features(item1, item2):
+    try:
+        # 比較 address
+        address_sim = cosine_similarity(item1['VW_address'], item2['VW_address'])
+        if address_sim < 1:
+            return False
+
+        # 比較 pattern
+        pattern_sim = cosine_similarity(item1['VW_pattern'], item2['VW_pattern'])
+        if pattern_sim <= 0.9:
+            return False
+
+        # 比較 size
+        size_sim = cosine_similarity(item1['VW_size'], item2['VW_size'])
+        if size_sim < 1:
+            return False
+
+        # 比較 type
+        type_sim = cosine_similarity(item1['VW_type'], item2['VW_type'])
+        if type_sim < 0.8:
+            return False
+
+        # 比較 positionround 的 subway
+        subway_sim = cosine_similarity(item1['VW_subway'], item2['VW_subway'])
+        bus_sim = cosine_similarity(item1['VW_bus'], item2['VW_bus'])
+        servicelist_sim = None
+
+        # 比較 positionround 的 bus
+        if subway_sim >= 0.8:
+            subway_pass = True
+        else:
+            subway_pass = False
+
+        if bus_sim >= 0.8:
+            bus_pass = True
+        else:
+            bus_pass = False
+
+        # 比較 servicelist 可用設備
+        if item1.get('VW_servicelist') and item2.get('VW_servicelist'):
+            servicelist_sim = cosine_similarity(item1['VW_servicelist'], item2['VW_servicelist'])
+            servicelist_pass = servicelist_sim >= 0.8
+        else:
+            servicelist_pass = False
+
+        # 如果 subway、bus、servicelist 中有兩個以上通過，則認為相似
+        passes = [subway_pass, bus_pass, servicelist_pass].count(True)
+        if passes < 2:
+            return False
+
+        return True
+    except ValueError as e:
+        print(f"錯誤: {e}")
+        return False
 
 # 處理圖片數據，並存到資料庫
 def process_image_data(hid, image_folder):
@@ -108,20 +186,9 @@ def process_image_data(hid, image_folder):
     cursor.close()
     connection.close()
 
-# 比對並生成 same_id
-def compare_and_generate_same_id(hid, item, data, text_threshold=0.8, image_threshold=0.5):
-    # 比對文字與圖片
-    for existing_item in data:
-        if compare_text_features(item, existing_item, text_threshold):
-            for img1 in item['VP_images']:
-                for img2 in existing_item['VP_images']:
-                    if compare_images(img1['objects'], img2['objects'], image_threshold):
-                        return existing_item['same_id']
-    return None
-
 def main():
-    # 圖片儲存路徑暫時待定
-    image_folder = "C:\\jpg"  # 圖片儲存路徑未定
+    # 圖片儲存路徑
+    image_folder = "C:\\jpg"
     
     # 連接到 ghdetail 資料庫
     connection = connect_to_house_database()

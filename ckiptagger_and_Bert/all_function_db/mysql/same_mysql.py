@@ -49,7 +49,7 @@ def update_same_in_mysql(json_file, connection):
 # 主函數
 def main():
     # JSON 文件路徑，這裡保存了比對後的結果
-    json_file = "C:\\Users\\ntubgoldhouse\\Desktop\\all_function_db\\similar_houses_1.json"
+    json_file = "C:\\Users\\ntubgoldhouse\\Desktop\\Goldhouse\\ckiptagger_and_Bert\\all_function_db\\json結果\\similar_houses.json"
 
     # 連接到 MySQL 資料庫
     connection = connect_to_mysql()
