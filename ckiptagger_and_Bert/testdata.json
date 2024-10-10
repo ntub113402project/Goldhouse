@@ -1,0 +1,157 @@
+{
+    "hid": "16320404",
+    "url": "https://rent.591.com.tw/rent-detail-16320404.html",
+    "houseinfo": {
+        "title": "公館捷運站旁雅房出租（有電梯）交通便利",
+        "pattern": "雅房",
+        "size": "3坪",
+        "layer": "8F/12F",
+        "type": "電梯大樓",
+        "price": 7500,
+        "deposit": "7,500元/月 押金面議"
+    },
+    "positionround": {
+        "address": "中正區羅斯福路四段50號",
+        "subway": [
+            "距公館站47公尺",
+            "距台電大樓站749公尺"
+        ],
+        "bus": [
+            "距捷運公館站45公尺"
+        ]
+    },
+    "servicelist": [
+        {
+            "device": "冰箱",
+            "avaliable": false
+        },
+        {
+            "device": "洗衣機",
+            "avaliable": true
+        },
+        {
+            "device": "電視",
+            "avaliable": false
+        },
+        {
+            "device": "冷氣",
+            "avaliable": true
+        },
+        {
+            "device": "熱水器",
+            "avaliable": true
+        },
+        {
+            "device": "床",
+            "avaliable": true
+        },
+        {
+            "device": "衣櫃",
+            "avaliable": true
+        },
+        {
+            "device": "第四台",
+            "avaliable": true
+        },
+        {
+            "device": "網路",
+            "avaliable": true
+        },
+        {
+            "device": "天然瓦斯",
+            "avaliable": true
+        },
+        {
+            "device": "沙發",
+            "avaliable": false
+        },
+        {
+            "device": "桌椅",
+            "avaliable": true
+        },
+        {
+            "device": "陽台",
+            "avaliable": true
+        },
+        {
+            "device": "電梯",
+            "avaliable": true
+        },
+        {
+            "device": "平面車位",
+            "avaliable": true
+        }
+    ],
+    "remark": {
+        "agency": "屋主: 林小姐 (仲介勿擾)",
+        "agency_company": "2007年加入591",
+        "content": [
+            "公館捷站旁雅房出租仲免 無炊不需追垃圾車、包裹有管理員代收",
+            "租金7500和8500含水電、網路、寬頻、管理費〈除冷氣〉其餘都含在房租內，",
+            "臺大對面雅房出租近公館捷運站，雅房；有電梯、不是頂樓、需正職、無吸煙、愛乾淨、好溝通環境單純‧旁有捷運站、公車站附近有公園、銀行、便利商店、晚上有夜市生活機能建全‧看房時間早上10 到晚上10點〈先聯絡再看房〉",
+            "北市羅斯福路4段50號8樓之3(非頂樓有2台電梯)",
+            "02-23684768   0913055509     0932326033林先生",
+            "附近有便利商店、傳統市場、公園綠地、學校、醫療機構、夜市。"
+        ]
+    },
+    "housedetail": [
+        {
+            "name": "租金含",
+            "text": "水費電費瓦斯費管理費第四台網路清潔費"
+        },
+        {
+            "name": "押金",
+            "text": "面議"
+        },
+        {
+            "name": "車位費",
+            "text": "費用另計"
+        },
+        {
+            "name": "法定用途",
+            "text": "住家用"
+        },
+        {
+            "name": "產權登記",
+            "text": "已辦理"
+        },
+        {
+            "name": "隔間材料",
+            "text": "水泥磚牆"
+        }
+    ],
+    "near": [
+        {
+            "hid": "16371235",
+            "url": "https://rent.591.com.tw/rent-detail-16371235.html",
+            "title": "租房賺零用金，可短租，剩1間7月。限女",
+            "price": 8300,
+            "distance": "255公尺",
+            "intro": "中正區-汀州路三段 3坪"
+        },
+        {
+            "hid": "16427778",
+            "url": "https://rent.591.com.tw/rent-detail-16427778.html",
+            "title": "捷運公館站2分【秒殺】雙面採光★學生首選",
+            "price": 7799,
+            "distance": "271公尺",
+            "intro": "中正區-汀州路三段 5坪"
+        },
+        {
+            "hid": "16454644",
+            "url": "https://rent.591.com.tw/rent-detail-16454644.html",
+            "title": "師大路與羅師福路口",
+            "price": 8000,
+            "distance": "896公尺",
+            "intro": "中正區-羅斯福路三段 3坪"
+        },
+        {
+            "hid": "16492614",
+            "url": "https://rent.591.com.tw/rent-detail-16492614.html",
+            "title": "台大師大近捷運女套房出租",
+            "price": 7800,
+            "distance": "843公尺",
+            "intro": "大安區-泰順街 3.5坪"
+        }
+    ]
+}
