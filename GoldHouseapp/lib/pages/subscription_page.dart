@@ -15,7 +15,8 @@ class SubscriptionPage extends StatefulWidget {
 
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<Map<String, dynamic>> subscriptions = [];
-
+  bool isLoading = true; 
+  
   Future<void> _fetchProperties(
       Map<String, dynamic> subscription, int index) async {
     int? subscriptionId = subscriptions[index]['subscription_id'];
@@ -60,6 +61,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       print('Member ID not found');
       setState(() {
         subscriptions = [];
+        isLoading = false;
       });
       return;
     }
@@ -87,16 +89,20 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   'properties': [],
                 })
             .toList();
+        isLoading = false;
       });
     } else {
       print('Failed to fetch subscriptions');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   void _addSubscription(Map<String, dynamic> subscription) async {
     print('Adding subscription: $subscription');
     final response = await http.post(
-      Uri.parse('http://4.227.176.245:5000/add_subscription'),
+      Uri.parse('http://4.227.176.245:5000/manage_subscription'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(subscription),
     );
@@ -137,7 +143,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     }
 
     final response = await http.post(
-      Uri.parse('http://4.227.176.245:5000/delete_subscription'),
+      Uri.parse('http://4.227.176.245:5000/manage_subscription'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'subscription_id': subscriptionId}),
     );
@@ -204,13 +210,38 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF613F26)),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      AddSubscriptionPage(onSubmit: _addSubscription),
-                ),
-              );
+            onPressed: () async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              int? memberId = prefs.getInt('member_id');
+              if (memberId == null) {
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) {
+                    Future.delayed(Duration(seconds: 2), () {
+                      Navigator.of(context).pop();
+                    });
+
+                    return AlertDialog(
+                      backgroundColor: Color.fromARGB(255, 40, 40, 40),
+                      title: Center(
+                          child: Text(
+                        '請先登入',
+                        style: TextStyle(
+                            color: const Color.fromARGB(255, 243, 243, 243),
+                            fontWeight: FontWeight.bold),
+                      )),
+                    );
+                  },
+                );
+              } else {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        AddSubscriptionPage(onSubmit: _addSubscription),
+                  ),
+                );
+              }
             },
             child: const Text(
               '新增訂閱條件',
@@ -221,7 +252,13 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             height: 10,
           ),
           Expanded(
-            child: subscriptions.isEmpty
+            child: isLoading
+            ? const Center(
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF613F26),
+                    ), 
+                  )          
+            : subscriptions.isEmpty
                 ? const Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -267,57 +304,60 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: Theme(
-                            data: Theme.of(context).copyWith(
-                              splashColor:
-                                  const Color.fromARGB(0, 255, 255, 255),
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 10),
-                              title: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${subscription['city']} ${(subscription['district'] == null || subscription['district'].isEmpty) ? '' : subscription['district'].join(', ')}',
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color: Color(0xFF613F26), 
+                              data: Theme.of(context).copyWith(
+                                splashColor:
+                                    const Color.fromARGB(0, 255, 255, 255),
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 10),
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${subscription['city']} ${(subscription['district'] == null || subscription['district'].isEmpty) ? '' : subscription['district'].join(', ')}',
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: Color(0xFF613F26),
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    style: TextStyle(fontSize: 16),
-                                    '類型：${subscription['pattern'] == null || subscription['pattern'].isEmpty ? '不限' : subscription['pattern'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['type'] == null || subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')}',
-                                  ),
-                                ],
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  _removeSubscription(index);
+                                    Text(
+                                      style: TextStyle(fontSize: 16),
+                                      '類型：${subscription['pattern'] == null || subscription['pattern'].isEmpty ? '不限' : subscription['pattern'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['type'] == null || subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')}',
+                                    ),
+                                  ],
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () {
+                                    _removeSubscription(index);
+                                  },
+                                ),
+                                onTap: () async {
+                                  int? subscriptionId =
+                                      subscription['subscription_id'];
+                                  if (subscriptionId != null) {
+                                    await _fetchProperties(subscription, index);
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            PropertyDetailsPage(
+                                          properties:
+                                              subscription['properties'],
+                                          subscription: subscription,
+                                          subscriptionId: subscriptionId,
+                                          onReturn: _updateLastCheckTime,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    print('subscription_id is null');
+                                  }
                                 },
-                              ),
-                              onTap: () async {
-  int? subscriptionId = subscription['subscription_id'];
-  if (subscriptionId != null) {
-    await _fetchProperties(subscription, index);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PropertyDetailsPage(
-          properties: subscription['properties'],
-          subscription: subscription,
-          subscriptionId: subscriptionId,
-          onReturn: _updateLastCheckTime,
-        ),
-      ),
-    );
-  } else {
-    print('subscription_id is null');
-  }
-},)
-                          ),
+                              )),
                         ),
                       );
                     },

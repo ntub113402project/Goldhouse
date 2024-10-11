@@ -16,6 +16,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
   int? selectedHouseIndex;
   Map<int, bool> selected = {};
   bool showcheckbox = false;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -37,15 +38,22 @@ class _CreateHousePageState extends State<CreateHousePage> {
         setState(() {
           createhouses =
               housesData.map((house) => house as Map<String, dynamic>).toList();
+          isLoading = false;
         });
 
         List<String> storedHouses =
             housesData.map((house) => jsonEncode(house)).toList();
         await prefs.setStringList('storedHouses', storedHouses);
       } else {
+        setState(() {
+          isLoading = false;  
+        });
         print('Failed to load houses from server');
       }
     } else {
+      setState(() {
+        isLoading = false;  
+      });
       print('User not logged in');
     }
   }
@@ -76,23 +84,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
       List<String> storedHouses = prefs.getStringList('storedHouses') ?? [];
       storedHouses.removeWhere((house) => jsonDecode(house)['hid'] == hid);
       await prefs.setStringList('storedHouses', storedHouses);
-
-    } else {
-
-    }
-  }
-
-  void _navigateToAddHousePage() async {
-    final houseData = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AddPage(onAddHouse: _addHouse),
-      ),
-    );
-
-    if (houseData != null) {
-      _addHouse(houseData); // 添加新的房屋數據
-      _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
-    }
+    } else {}
   }
 
   void fetchHouseDetails(BuildContext context, String hid) async {
@@ -153,13 +145,45 @@ class _CreateHousePageState extends State<CreateHousePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF613F26),
                   ),
-                  onPressed: _navigateToAddHousePage,
+                  onPressed: () async {
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    int? memberId = prefs.getInt('member_id');
+                    if (memberId == null) {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false, 
+                        builder: (BuildContext context) {
+                          Future.delayed(Duration(seconds: 2), () {
+                            Navigator.of(context).pop(); 
+                          });
+
+                          return AlertDialog(
+                            backgroundColor: Color.fromARGB(255, 40, 40, 40),
+                            title: Center(child: Text('請先登入',style: TextStyle(color: const Color.fromARGB(255, 243, 243, 243),fontWeight: FontWeight.bold),)),
+                          );
+                        },
+                      );
+                    } else {
+                      final houseData = await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => AddPage(onAddHouse: _addHouse),
+                        ),
+                      );
+
+                      if (houseData != null) {
+                        _addHouse(houseData); // 添加新的房屋數據
+                        _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
+                      }
+                    }
+                  },
                   child: const Text(
                     '刊登物件',
                     style: TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
                   ),
                 ),
               ),
+              if(createhouses.isNotEmpty)
               Positioned(
                 right: 0,
                 child: IconButton(
@@ -174,29 +198,33 @@ class _CreateHousePageState extends State<CreateHousePage> {
             ],
           ),
           Expanded(
-            child: createhouses.isEmpty
+            child: isLoading
                 ? const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_to_photos_rounded,
-                          size: 100,
-                          color: Color.fromARGB(255, 181, 181, 181),
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        Text(
-                          '尚未有刊登物件',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Color.fromARGB(255, 181, 181, 181),
-                          ),
-                        )
-                      ],
-                    ),
+                    child: CircularProgressIndicator(
+                      color: Color(0xFF613F26),
+                    ), 
                   )
+                : createhouses.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_to_photos_rounded,
+                              size: 100,
+                              color: Color.fromARGB(255, 181, 181, 181),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              '尚未有刊登物件',
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: Color.fromARGB(255, 181, 181, 181),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                 : ListView.builder(
                     itemCount: createhouses.length,
                     itemBuilder: (context, index) {
@@ -310,7 +338,8 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                                   '${createhouses[index]['city']} ${createhouses[index]['district']}',
                                                   style: const TextStyle(
                                                     fontSize: 14,
-                                                  ),)
+                                                  ),
+                                                )
                                               ],
                                             ),
                                           ),
@@ -350,13 +379,16 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                             onPressed: () {
                                               String hid =
                                                   createhouses[index]['hid'];
-                                              _deleteHouse(
-                                                  hid, index); 
+                                              _deleteHouse(hid, index);
                                               setState(() {
                                                 showcheckbox = !showcheckbox;
                                               });
                                             },
-                                            icon: Icon(Icons.cancel_rounded,color: Color(0xFF613F26),size: 30,))),
+                                            icon: Icon(
+                                              Icons.cancel_rounded,
+                                              color: Color(0xFF613F26),
+                                              size: 30,
+                                            ))),
                                   if (selectedHouseIndex == index)
                                     Positioned.fill(
                                       child: GestureDetector(

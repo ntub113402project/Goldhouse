@@ -4,6 +4,7 @@ import 'package:flutter_application_1/pages/collection_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'class.dart';
 import 'clickrecord_page.dart';
 import 'controll_page.dart';
 import 'package:http/http.dart' as http;
@@ -223,6 +224,7 @@ class _PersonalPageState extends State<PersonalPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.clear();
     await prefs.setBool('isLoggedIn', false);
+    FavoriteManager().favoriteHids.clear();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => ControllPage()),
       (Route<dynamic> route) => false,

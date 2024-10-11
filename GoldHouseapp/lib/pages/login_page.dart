@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
               TextButton(
                 child: const Text('OK'),
                 onPressed: () {
-                  Navigator.pushNamed(context, '/controll', arguments: members);
+                  Navigator.pushReplacementNamed(context, '/controll', arguments: members);
                 },
               ),
             ],

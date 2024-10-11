@@ -8,9 +8,9 @@ class HomePage extends StatefulWidget {
 }
 
 List imageList = [
-  {"id": 1, "image_path": 'assets/note1.jpg'},
-  {"id": 2, "image_path": 'assets/note1.jpg'},
-  {"id": 3, "image_path": 'assets/note1.jpg'}
+  {"id": 1, "image_path": 'assets/image1.jpg'},
+  {"id": 2, "image_path": 'assets/image2.jpg'},
+  {"id": 3, "image_path": 'assets/image3.jpg'}
 ];
 final CarouselController carouselController = CarouselController();
 

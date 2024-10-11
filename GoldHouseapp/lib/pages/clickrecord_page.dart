@@ -151,7 +151,9 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
         actions: [TextButton(onPressed: _clearclickrecord, child: Text('清除'))],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(
+            color: Color(0xFF613F26),
+          ))
           : _clickHistory.isEmpty
               ? Center(child: Text('尚無瀏覽紀錄'))
               : ListView.builder(

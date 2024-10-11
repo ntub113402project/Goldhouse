@@ -21,6 +21,8 @@ dependencies:
   loading_animation_widget: ^1.2.1
   collection: ^1.18.0
   url_launcher: ^6.3.0
+  app_links: ^6.3.2
+
 
 dev_dependencies:
   flutter_test:
@@ -33,4 +35,7 @@ flutter:
     - assets/logo_words.png
     - assets/Logo.png
     - assets/note1.jpg
+    - assets/image1.jpg
+    - assets/image2.jpg
+    - assets/image3.jpg
       
