@@ -445,7 +445,7 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
     }
   }
 
-  void fetchHouseDetails(BuildContext context, String hid) async {
+  Future <void> fetchHouseDetails(BuildContext context, String hid) async {
     final response =
         await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
 
@@ -465,7 +465,7 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
     }
   }
 
-  void clickrecord(int memberId, String hid) async {
+  Future <void> clickrecord(int memberId, String hid) async {
     final response = await http.post(
       Uri.parse('http://4.227.176.245:5000//record_click'),
       headers: {
@@ -523,7 +523,7 @@ class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
                       int? memberId = prefs.getInt('member_id');
 
                       if (memberId != null) {
-                        clickrecord(memberId, property['hid']);
+                        await clickrecord(memberId, property['hid']);
                       }
 
                       fetchHouseDetails(context, property['hid']);
