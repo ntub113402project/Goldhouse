@@ -17,47 +17,47 @@ class LoginFirstPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         body: ListView(
-          children: [
-            SizedBox(height: 50,),
-            Container(
-              height: 200,
-              margin: const EdgeInsets.only(top: 10,left: 35,right: 35),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECD8C9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF613F26), width: 10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+      children: [
+        const SizedBox(
+          height: 50,
+        ),
+        Container(
+          height: 200,
+          margin: const EdgeInsets.only(top: 10, left: 35, right: 35),
+          decoration: BoxDecoration(
+            color: const Color(0xFFECD8C9),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF613F26), width: 10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                spreadRadius: 5,
+                blurRadius: 7,
+                offset: const Offset(0, 3),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const SizedBox(
-                    height: 5,
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF613F26)),
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/login');
-                    },
-                    child: const Text(
-                      '按這裡登入',
-                      style:
-                          TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
-                    ),
-                  ),
-                ],
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const SizedBox(
+                height: 5,
               ),
-            ),
-
-            Container(
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF613F26)),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/login');
+                },
+                child: const Text(
+                  '按這裡登入',
+                  style: TextStyle(color: Color.fromARGB(255, 245, 245, 245)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
           margin:
               const EdgeInsets.only(top: 35, left: 30, right: 30, bottom: 20),
           decoration: BoxDecoration(
@@ -76,7 +76,7 @@ class LoginFirstPage extends StatelessWidget {
               SizedBox(
                 height: 10,
               ),
-               ListTile(
+              ListTile(
                 leading: Icon(
                   Icons.person,
                   size: 30,
@@ -136,19 +136,19 @@ class LoginFirstPage extends StatelessWidget {
                 ),
                 trailing: Icon(Icons.arrow_forward_ios),
               ),
-              const SizedBox(
+              SizedBox(
                 height: 10,
               ),
             ],
           ),
         ),
-          ],
-        ));
+      ],
+    ));
   }
 }
 
 class AccountPage extends StatelessWidget {
-  AccountPage({super.key});
+  const AccountPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -159,9 +159,9 @@ class AccountPage extends StatelessWidget {
           return const CircularProgressIndicator();
         } else {
           if (snapshot.data == true) {
-            return PersonalPage();
+            return const PersonalPage();
           } else {
-            return LoginFirstPage();
+            return const LoginFirstPage();
           }
         }
       },
@@ -175,6 +175,8 @@ class AccountPage extends StatelessWidget {
 }
 
 class PersonalPage extends StatefulWidget {
+  const PersonalPage({super.key});
+
   @override
   State<PersonalPage> createState() => _PersonalPageState();
 }
@@ -226,7 +228,7 @@ class _PersonalPageState extends State<PersonalPage> {
     await prefs.setBool('isLoggedIn', false);
     FavoriteManager().favoriteHids.clear();
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => ControllPage()),
+      MaterialPageRoute(builder: (context) => const ControllPage()),
       (Route<dynamic> route) => false,
     );
   }
@@ -388,7 +390,7 @@ class _PersonalPageState extends State<PersonalPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => ModifyPasswordPage()),
+                        builder: (context) => const ModifyPasswordPage()),
                   );
                 },
                 leading: const Icon(
@@ -410,19 +412,20 @@ class _PersonalPageState extends State<PersonalPage> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => CollectionPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const CollectionPage()),
                   );
                 },
-                leading: Icon(
+                leading: const Icon(
                   Icons.favorite_rounded,
                   size: 30,
                   color: Color(0xFF613F26),
                 ),
-                title: Text(
+                title: const Text(
                   "我的收藏",
                   style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                 ),
-                trailing: Icon(Icons.arrow_forward_ios),
+                trailing: const Icon(Icons.arrow_forward_ios),
               ),
               const Divider(
                 color: Color(0xFF613F26),
@@ -431,20 +434,21 @@ class _PersonalPageState extends State<PersonalPage> {
               ListTile(
                 onTap: () {
                   Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ClickHistoryPage()),
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ClickHistoryPage()),
                   );
                 },
-                leading: Icon(
+                leading: const Icon(
                   Icons.loyalty,
                   size: 30,
                   color: Color(0xFF613F26),
                 ),
-                title: Text(
+                title: const Text(
                   "瀏覽紀錄",
                   style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                 ),
-                trailing: Icon(Icons.arrow_forward_ios),
+                trailing: const Icon(Icons.arrow_forward_ios),
               ),
               const SizedBox(
                 height: 10,
@@ -459,7 +463,7 @@ class _PersonalPageState extends State<PersonalPage> {
 
 class ModifyPersonalPage extends StatefulWidget {
   final Function onUpdate;
-  ModifyPersonalPage({super.key, required this.onUpdate});
+  const ModifyPersonalPage({super.key, required this.onUpdate});
 
   @override
   State<ModifyPersonalPage> createState() => _ModifyPersonalPageState();
@@ -515,19 +519,22 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
       if (response.statusCode == 200) {
         // 更新成功
         widget.onUpdate();
-        showDialog(context: context, builder: (BuildContext context) {
-          return AlertDialog(
-            content: const Text('修改成功'),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          );
-        },);
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              content: const Text('修改成功'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('OK'),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            );
+          },
+        );
         // 更新 SharedPreferences
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('username', _nameController.text);
@@ -537,14 +544,14 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
         // 處理更新失敗
         ScaffoldMessenger.of(context).removeCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('更新失敗')),
+          const SnackBar(content: Text('更新失敗')),
         );
       }
     } catch (error) {
-      print('Error: $error');
+      ('錯誤: $error');
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('無法連線至伺服器')),
+        const SnackBar(content: Text('無法連線至伺服器')),
       );
     }
   }
@@ -555,7 +562,7 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
         appBar: AppBar(
           backgroundColor: const Color(0xFFECD8C9),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () {
               Navigator.pop(context);
               widget.onUpdate();
@@ -759,6 +766,8 @@ class _ModifyPersonalPageState extends State<ModifyPersonalPage> {
 }
 
 class ModifyPasswordPage extends StatefulWidget {
+  const ModifyPasswordPage({super.key});
+
   @override
   State<ModifyPasswordPage> createState() => _ModifyPasswordPageState();
 }
@@ -785,6 +794,7 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
     String confirmPassword = _confirmPasswordController.text;
 
     if (newPassword != confirmPassword) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -813,6 +823,7 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
         headers: {'Content-Type': 'application/json'});
 
     if (response.statusCode == 200) {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -829,6 +840,7 @@ class _ModifyPasswordPageState extends State<ModifyPasswordPage> {
         ),
       );
     } else {
+      if (!mounted) return;
       showDialog(
         context: context,
         builder: (context) => AlertDialog(

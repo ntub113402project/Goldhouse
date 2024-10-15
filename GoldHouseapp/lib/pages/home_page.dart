@@ -3,6 +3,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'class.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -92,7 +94,7 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(
               height: 20,
             ),
-            HouseList(),
+            const HouseList(),
             const SizedBox(
               height: 20,
             ),
@@ -102,6 +104,8 @@ class _HomePageState extends State<HomePage> {
 }
 
 class HouseList extends StatelessWidget {
+  const HouseList({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(

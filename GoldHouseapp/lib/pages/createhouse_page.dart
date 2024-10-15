@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class CreateHousePage extends StatefulWidget {
+  const CreateHousePage({super.key});
+
   @override
   State<CreateHousePage> createState() => _CreateHousePageState();
 }
@@ -21,10 +23,10 @@ class _CreateHousePageState extends State<CreateHousePage> {
   @override
   void initState() {
     super.initState();
-    _fetchHousesFromServer();
+    _loadHouses();
   }
 
-  void _fetchHousesFromServer() async {
+  void _loadHouses() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? memberId = prefs.getInt('member_id');
 
@@ -46,15 +48,15 @@ class _CreateHousePageState extends State<CreateHousePage> {
         await prefs.setStringList('storedHouses', storedHouses);
       } else {
         setState(() {
-          isLoading = false;  
+          isLoading = false;
         });
-        print('Failed to load houses from server');
+        ('加載失敗');
       }
     } else {
       setState(() {
-        isLoading = false;  
+        isLoading = false;
       });
-      print('User not logged in');
+      ('尚未登入');
     }
   }
 
@@ -79,7 +81,6 @@ class _CreateHousePageState extends State<CreateHousePage> {
         createhouses.removeAt(index);
       });
 
-      // 更新 SharedPreferences
       SharedPreferences prefs = await SharedPreferences.getInstance();
       List<String> storedHouses = prefs.getStringList('storedHouses') ?? [];
       storedHouses.removeWhere((house) => jsonDecode(house)['hid'] == hid);
@@ -93,6 +94,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
 
     if (response.statusCode == 200) {
       final houseDetails = json.decode(response.body);
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -101,7 +103,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
       );
       _hideOverlay();
     } else {
-      print(response.body);
+      (response.body);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load house details')),
       );
@@ -152,15 +154,21 @@ class _CreateHousePageState extends State<CreateHousePage> {
                     if (memberId == null) {
                       showDialog(
                         context: context,
-                        barrierDismissible: false, 
+                        barrierDismissible: false,
                         builder: (BuildContext context) {
-                          Future.delayed(Duration(seconds: 2), () {
-                            Navigator.of(context).pop(); 
+                          Future.delayed(const Duration(seconds: 2), () {
+                            Navigator.of(context).pop();
                           });
 
-                          return AlertDialog(
+                          return const AlertDialog(
                             backgroundColor: Color.fromARGB(255, 40, 40, 40),
-                            title: Center(child: Text('請先登入',style: TextStyle(color: const Color.fromARGB(255, 243, 243, 243),fontWeight: FontWeight.bold),)),
+                            title: Center(
+                                child: Text(
+                              '請先登入',
+                              style: TextStyle(
+                                  color: Color.fromARGB(255, 243, 243, 243),
+                                  fontWeight: FontWeight.bold),
+                            )),
                           );
                         },
                       );
@@ -173,7 +181,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
 
                       if (houseData != null) {
                         _addHouse(houseData); // 添加新的房屋數據
-                        _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
+                        _loadHouses(); // 重新從服務器獲取最新的房屋數據
                       }
                     }
                   },
@@ -183,18 +191,18 @@ class _CreateHousePageState extends State<CreateHousePage> {
                   ),
                 ),
               ),
-              if(createhouses.isNotEmpty)
-              Positioned(
-                right: 0,
-                child: IconButton(
-                  icon: Icon(Icons.delete_forever),
-                  onPressed: () {
-                    setState(() {
-                      showcheckbox = !showcheckbox;
-                    });
-                  },
+              if (createhouses.isNotEmpty)
+                Positioned(
+                  right: 0,
+                  child: IconButton(
+                    icon: const Icon(Icons.delete_forever),
+                    onPressed: () {
+                      setState(() {
+                        showcheckbox = !showcheckbox;
+                      });
+                    },
+                  ),
                 ),
-              ),
             ],
           ),
           Expanded(
@@ -202,7 +210,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
                 ? const Center(
                     child: CircularProgressIndicator(
                       color: Color(0xFF613F26),
-                    ), 
+                    ),
                   )
                 : createhouses.isEmpty
                     ? const Center(
@@ -225,64 +233,76 @@ class _CreateHousePageState extends State<CreateHousePage> {
                           ],
                         ),
                       )
-                : ListView.builder(
-                    itemCount: createhouses.length,
-                    itemBuilder: (context, index) {
-                      var house = createhouses[index];
-                      var imagePath = (house['images'] is List &&
-                              house['images'].isNotEmpty)
-                          ? house['images'][0]
-                          : 'assets/Logo.png';
+                    : ListView.builder(
+                        itemCount: createhouses.length,
+                        itemBuilder: (context, index) {
+                          var house = createhouses[index];
+                          var imagePath = (house['images'] is List &&
+                                  house['images'].isNotEmpty)
+                              ? house['images'][0]
+                              : 'assets/Logo.png';
 
-                      var imageUrl = imagePath.startsWith('http')
-                          ? imagePath
-                          : 'http://4.227.176.245:5000$imagePath';
-                      return Container(
-                          width: MediaQuery.of(context).size.width,
-                          height: 150,
-                          margin: const EdgeInsets.only(
-                              left: 20, right: 20, top: 10, bottom: 10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 1,
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
+                          var imageUrl = imagePath.startsWith('http')
+                              ? imagePath
+                              : 'http://4.227.176.245:5000$imagePath';
+                          return Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 150,
+                              margin: const EdgeInsets.only(
+                                  left: 20, right: 20, top: 10, bottom: 10),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 1,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              GestureDetector(
-                                onTap: () => _showOverlay(index),
-                                child: Stack(children: [
-                                  Card(
-                                    color: selectedHouseIndex == index
-                                        ? Colors.grey[300]
-                                        : Colors.white,
-                                    elevation: 0,
-                                    margin: EdgeInsets.zero,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        ClipRRect(
-                                          borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(8),
-                                            bottomLeft: Radius.circular(8),
-                                          ),
-                                          child: imageUrl.startsWith('http')
-                                              ? Image.network(
-                                                  imageUrl,
-                                                  errorBuilder: (context, error,
-                                                      stackTrace) {
-                                                    return Image.asset(
-                                                      'assets/Logo.png',
+                              child: Stack(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => _showOverlay(index),
+                                    child: Stack(children: [
+                                      Card(
+                                        color: selectedHouseIndex == index
+                                            ? Colors.grey[300]
+                                            : Colors.white,
+                                        elevation: 0,
+                                        margin: EdgeInsets.zero,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                topLeft: Radius.circular(8),
+                                                bottomLeft: Radius.circular(8),
+                                              ),
+                                              child: imageUrl.startsWith('http')
+                                                  ? Image.network(
+                                                      imageUrl,
+                                                      errorBuilder: (context,
+                                                          error, stackTrace) {
+                                                        return Image.asset(
+                                                          'assets/Logo.png',
+                                                          fit: BoxFit.cover,
+                                                          width: MediaQuery.of(
+                                                                      context)
+                                                                  .size
+                                                                  .width *
+                                                              0.35,
+                                                          height:
+                                                              double.infinity,
+                                                        );
+                                                      },
                                                       fit: BoxFit.cover,
                                                       width:
                                                           MediaQuery.of(context)
@@ -290,187 +310,187 @@ class _CreateHousePageState extends State<CreateHousePage> {
                                                                   .width *
                                                               0.35,
                                                       height: double.infinity,
-                                                    );
-                                                  },
-                                                  fit: BoxFit.cover,
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.35,
-                                                  height: double.infinity,
-                                                )
-                                              : Image.asset(
-                                                  imageUrl,
-                                                  fit: BoxFit.cover,
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.35,
-                                                  height: double.infinity,
-                                                ),
-                                        ),
-                                        Expanded(
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  '${createhouses[index]['pattern']} | ${createhouses[index]['title']}',
-                                                  style: const TextStyle(
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.clip,
-                                                ),
-                                                const SizedBox(height: 2),
-                                                Text(
-                                                  '${createhouses[index]['size']}',
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                  ),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.clip,
-                                                ),
-                                                Text(
-                                                  '${createhouses[index]['city']} ${createhouses[index]['district']}',
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                  ),
-                                                )
-                                              ],
+                                                    )
+                                                  : Image.asset(
+                                                      imageUrl,
+                                                      fit: BoxFit.cover,
+                                                      width:
+                                                          MediaQuery.of(context)
+                                                                  .size
+                                                                  .width *
+                                                              0.35,
+                                                      height: double.infinity,
+                                                    ),
                                             ),
-                                          ),
+                                            Expanded(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      '${createhouses[index]['pattern']} | ${createhouses[index]['title']}',
+                                                      style: const TextStyle(
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                      maxLines: 2,
+                                                      overflow:
+                                                          TextOverflow.clip,
+                                                    ),
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      '${createhouses[index]['size']}',
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.clip,
+                                                    ),
+                                                    Text(
+                                                      '${createhouses[index]['city']} ${createhouses[index]['district']}',
+                                                      style: const TextStyle(
+                                                        fontSize: 14,
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                  Positioned(
-                                    bottom: 6,
-                                    right: 8,
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          '${createhouses[index]['price']}',
-                                          style: const TextStyle(
-                                            color: Color.fromARGB(
-                                                255, 249, 58, 58),
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                      ),
+                                      Positioned(
+                                        bottom: 6,
+                                        right: 8,
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              '${createhouses[index]['price']}',
+                                              style: const TextStyle(
+                                                color: Color.fromARGB(
+                                                    255, 249, 58, 58),
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            const Text(
+                                              ' 元/月',
+                                              style: TextStyle(
+                                                  color: Color.fromARGB(
+                                                      255, 249, 58, 58),
+                                                  fontSize: 13),
+                                            ),
+                                          ],
                                         ),
-                                        const Text(
-                                          ' 元/月',
-                                          style: TextStyle(
-                                              color: Color.fromARGB(
-                                                  255, 249, 58, 58),
-                                              fontSize: 13),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (showcheckbox)
-                                    Positioned(
-                                        top: -5,
-                                        right: -5,
-                                        child: IconButton(
-                                            onPressed: () {
-                                              String hid =
-                                                  createhouses[index]['hid'];
-                                              _deleteHouse(hid, index);
-                                              setState(() {
-                                                showcheckbox = !showcheckbox;
-                                              });
-                                            },
-                                            icon: Icon(
-                                              Icons.cancel_rounded,
-                                              color: Color(0xFF613F26),
-                                              size: 30,
-                                            ))),
-                                  if (selectedHouseIndex == index)
-                                    Positioned.fill(
-                                      child: GestureDetector(
-                                        onTap: _hideOverlay,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color:
-                                                Color.fromARGB(255, 33, 33, 33)
-                                                    .withOpacity(0.9),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceEvenly,
-                                            children: [
-                                              ElevatedButton(
+                                      ),
+                                      if (showcheckbox)
+                                        Positioned(
+                                            top: -5,
+                                            right: -5,
+                                            child: IconButton(
                                                 onPressed: () {
                                                   String hid =
                                                       createhouses[index]
                                                           ['hid'];
-                                                  fetchHouseDetails(
-                                                      context, hid);
+                                                  _deleteHouse(hid, index);
+                                                  setState(() {
+                                                    showcheckbox =
+                                                        !showcheckbox;
+                                                  });
                                                 },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.white,
-                                                ),
-                                                child: const Text(
-                                                  '瀏覽房屋',
-                                                  style: TextStyle(
-                                                      color: Colors.black),
-                                                ),
+                                                icon: const Icon(
+                                                  Icons.cancel_rounded,
+                                                  color: Color(0xFF613F26),
+                                                  size: 30,
+                                                ))),
+                                      if (selectedHouseIndex == index)
+                                        Positioned.fill(
+                                          child: GestureDetector(
+                                            onTap: _hideOverlay,
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: const Color.fromARGB(
+                                                        255, 33, 33, 33)
+                                                    .withOpacity(0.9),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              ElevatedButton(
-                                                onPressed: () async {
-                                                  final updatedHouseData =
-                                                      await Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          EditHousePage(
-                                                              houseData:
-                                                                  createhouses[
-                                                                      index]),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: [
+                                                  ElevatedButton(
+                                                    onPressed: () {
+                                                      String hid =
+                                                          createhouses[index]
+                                                              ['hid'];
+                                                      fetchHouseDetails(
+                                                          context, hid);
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.white,
                                                     ),
-                                                  );
+                                                    child: const Text(
+                                                      '瀏覽房屋',
+                                                      style: TextStyle(
+                                                          color: Colors.black),
+                                                    ),
+                                                  ),
+                                                  ElevatedButton(
+                                                    onPressed: () async {
+                                                      final updatedHouseData =
+                                                          await Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              EditHousePage(
+                                                                  houseData:
+                                                                      createhouses[
+                                                                          index]),
+                                                        ),
+                                                      );
 
-                                                  if (updatedHouseData !=
-                                                      null) {
-                                                    // 更新房屋數據
-                                                    setState(() {
-                                                      createhouses[index] =
-                                                          updatedHouseData;
-                                                    });
-
-                                                    // 隱藏覆蓋層
-                                                    _hideOverlay();
-
-                                                    // 刷新資料列表
-                                                    _fetchHousesFromServer(); // 重新從服務器獲取最新的房屋數據
-                                                  }
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.white,
-                                                ),
-                                                child: const Text(
-                                                  '編輯房屋',
-                                                  style: TextStyle(
-                                                      color: Colors.black),
-                                                ),
+                                                      if (updatedHouseData !=
+                                                          null) {
+                                                        // 更新房屋數據
+                                                        setState(() {
+                                                          createhouses[index] =
+                                                              updatedHouseData;
+                                                        });
+                                                        _hideOverlay();
+                                                        _loadHouses(); 
+                                                      }
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          Colors.white,
+                                                    ),
+                                                    child: const Text(
+                                                      '編輯房屋',
+                                                      style: TextStyle(
+                                                          color: Colors.black),
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ),
-                                ]),
-                              ),
-                            ],
-                          ));
-                    },
-                  ),
+                                    ]),
+                                  ),
+                                ],
+                              ));
+                        },
+                      ),
           ),
         ],
       ),
@@ -481,7 +501,7 @@ class _CreateHousePageState extends State<CreateHousePage> {
 class AddPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onAddHouse;
 
-  const AddPage({Key? key, required this.onAddHouse}) : super(key: key);
+  const AddPage({super.key, required this.onAddHouse});
   @override
   State<AddPage> createState() => _AddPageState();
 }
@@ -498,7 +518,7 @@ class _AddPageState extends State<AddPage> {
   final TextEditingController lessornameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
 
-  List<XFile>? _imageFileList = [];
+  final List<XFile> _imageFileList = [];
   String _selectedCity = '未選擇';
   String? _selectedArea = '未選擇';
   bool _isAreaVisible = false;
@@ -573,35 +593,31 @@ class _AddPageState extends State<AddPage> {
 
   Future<void> _pickImages() async {
     try {
-      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
-      if (pickedFiles != null) {
-        setState(() {
-          _imageFileList!.addAll(pickedFiles);
-        });
-      }
+      final List<XFile> pickedFiles = await _picker.pickMultiImage();
+      setState(() {
+        _imageFileList.addAll(pickedFiles);
+      });
     } catch (e) {
-      print("图片選擇失敗：$e");
+      ("圖片選擇失敗：$e");
     }
   }
 
   void _deleteImage(int index) {
     setState(() {
-      _imageFileList!.removeAt(index);
+      _imageFileList.removeAt(index);
     });
   }
 
   void _submitData() async {
-    // 提交新增請求
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int? memberId = prefs.getInt('member_id');
 
-    // 確保用戶已登入
     if (memberId == null) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            content: Text('請先登入'),
+            content: const Text('請先登入'),
             actions: <Widget>[
               TextButton(
                 child: const Text('確認'),
@@ -645,7 +661,7 @@ class _AddPageState extends State<AddPage> {
     request.fields['agency'] = agency;
     request.fields['phone'] = phoneController.text;
 
-    for (var imageFile in _imageFileList!) {
+    for (var imageFile in _imageFileList) {
       request.files.add(await http.MultipartFile.fromPath(
         'images',
         imageFile.path,
@@ -661,11 +677,11 @@ class _AddPageState extends State<AddPage> {
 
         final String? hid = responseData['hid'];
         if (hid == null) {
-          print('Failed to retrieve hid from server response');
+          ('無法建立hid');
           return;
         }
 
-        print('House added successfully: $responseBody');
+        ('新增成功: $responseBody');
 
         Map<String, dynamic> houseData = {
           'hid': hid,
@@ -690,15 +706,15 @@ class _AddPageState extends State<AddPage> {
               _genderlimit == 0 ? '限男' : (_genderlimit == 1 ? '限女' : '不限'),
           'agency': agency,
           'phone': phoneController.text,
-          'images': _imageFileList!.map((xFile) => xFile.path).toList(),
+          'images': _imageFileList.map((xFile) => xFile.path).toList(),
         };
 
-        Navigator.of(context).pop(houseData); // 返回新增的房屋數據
+        Navigator.of(context).pop(houseData);
       } else {
-        print('Failed to add house: ${response.statusCode}');
+        ('新增失敗: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error during house addition: $e');
+      ('錯誤發生: $e');
     }
   }
 
@@ -802,7 +818,7 @@ class _AddPageState extends State<AddPage> {
                         context: context,
                         builder: (BuildContext context) {
                           return ListView(
-                              padding: EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(16),
                               children: [
                                 const Text('選擇地區',
                                     textAlign: TextAlign.center,
@@ -1109,7 +1125,7 @@ class _AddPageState extends State<AddPage> {
                       Expanded(
                         child: Container(
                           height: 50,
-                          margin: EdgeInsets.only(bottom: 5, top: 5),
+                          margin: const EdgeInsets.only(bottom: 5, top: 5),
                           child: TextFormField(
                             controller: atfloorController,
                             decoration: const InputDecoration(
@@ -1132,11 +1148,12 @@ class _AddPageState extends State<AddPage> {
                           ),
                         ),
                       ),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Container(
                           height: 50,
-                          margin: EdgeInsets.only(bottom: 5, top: 5, right: 5),
+                          margin: const EdgeInsets.only(
+                              bottom: 5, top: 5, right: 5),
                           child: TextFormField(
                             controller: allfloorController,
                             decoration: const InputDecoration(
@@ -1210,7 +1227,7 @@ class _AddPageState extends State<AddPage> {
                               color: Color(0xFF613F26), fontSize: 20)),
                     )),
                     Radio(
-                      value: 1,
+                      value: 0,
                       groupValue: _lessortype,
                       onChanged: _handleRadioValuChangedlessortype,
                     ),
@@ -1219,7 +1236,7 @@ class _AddPageState extends State<AddPage> {
                       style: TextStyle(fontSize: 16, color: Color(0xFF613F26)),
                     ),
                     Radio(
-                      value: 2,
+                      value: 1,
                       groupValue: _lessortype,
                       onChanged: _handleRadioValuChangedlessortype,
                     ),
@@ -1525,7 +1542,7 @@ class _AddPageState extends State<AddPage> {
                       },
                     ),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Radio(
                     value: 0,
                     groupValue: _lessorgender,
@@ -1573,7 +1590,7 @@ class _AddPageState extends State<AddPage> {
                   setState(() {});
                 },
               ),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
               Column(
@@ -1614,14 +1631,14 @@ class _AddPageState extends State<AddPage> {
                     height: 10,
                   ),
                   Container(
-                    height: _imageFileList!.isEmpty ? 200.0 : null,
-                    margin: EdgeInsets.only(left: 20, right: 20),
+                    height: _imageFileList.isEmpty ? 200.0 : null,
+                    margin: const EdgeInsets.only(left: 20, right: 20),
                     decoration: BoxDecoration(
-                      color: Color(0xFFF5F0F0),
+                      color: const Color(0xFFF5F0F0),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: _imageFileList!.isEmpty
-                        ? Center(
+                    child: _imageFileList.isEmpty
+                        ? const Center(
                             child: Text(
                               '尚未新增房屋照片',
                               textAlign: TextAlign.center,
@@ -1631,19 +1648,19 @@ class _AddPageState extends State<AddPage> {
                           )
                         : GridView.builder(
                             shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
+                            physics: const NeverScrollableScrollPhysics(),
                             gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
+                                const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 3,
                               crossAxisSpacing: 4.0,
                               mainAxisSpacing: 4.0,
                             ),
-                            itemCount: _imageFileList!.length,
+                            itemCount: _imageFileList.length,
                             itemBuilder: (BuildContext context, int index) {
                               return Stack(
                                 children: [
                                   Image.file(
-                                    File(_imageFileList![index].path),
+                                    File(_imageFileList[index].path),
                                     fit: BoxFit.cover,
                                     width: double.infinity,
                                     height: double.infinity,
@@ -1652,7 +1669,7 @@ class _AddPageState extends State<AddPage> {
                                     top: -5,
                                     right: -5,
                                     child: IconButton(
-                                      icon: Icon(Icons.delete),
+                                      icon: const Icon(Icons.delete),
                                       onPressed: () {
                                         _deleteImage(index);
                                       },
@@ -1663,7 +1680,7 @@ class _AddPageState extends State<AddPage> {
                             },
                           ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
                   Align(
@@ -1691,13 +1708,13 @@ class _AddPageState extends State<AddPage> {
 class EditHousePage extends StatefulWidget {
   final Map<String, dynamic> houseData;
 
-  const EditHousePage({Key? key, required this.houseData}) : super(key: key);
+  const EditHousePage({super.key, required this.houseData});
 
   @override
-  _EditHousePageState createState() => _EditHousePageState();
+  EditHousePageState createState() => EditHousePageState();
 }
 
-class _EditHousePageState extends State<EditHousePage> {
+class EditHousePageState extends State<EditHousePage> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController titleController = TextEditingController();
@@ -1766,7 +1783,7 @@ class _EditHousePageState extends State<EditHousePage> {
     _imageFileList = widget.houseData['images']
         .map<String>((path) => path is String && path.startsWith('http')
             ? path
-            : 'http://4.227.176.245:5000' + (path as String))
+            : 'http://4.227.176.245:5000${path as String}')
         .toList();
   }
 
@@ -1776,20 +1793,18 @@ class _EditHousePageState extends State<EditHousePage> {
 
   Future<void> _pickImages() async {
     try {
-      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
-      if (pickedFiles != null) {
-        setState(() {
-          _imageFileList.addAll(pickedFiles.map<String>((xFile) => xFile.path));
-        });
+      final List<XFile> pickedFiles = await _picker.pickMultiImage();
+      setState(() {
+        _imageFileList.addAll(pickedFiles.map<String>((xFile) => xFile.path));
+      });
 
-        _onFieldChanged('images', _imageFileList);
-      }
+      _onFieldChanged('images', _imageFileList);
     } catch (e) {
-      print("圖片選擇失敗：$e");
+      ("圖片選擇失敗：$e");
     }
   }
 
-  List<String> _imagesToDelete = [];
+  final List<String> _imagesToDelete = [];
 
   void _deleteImage(int index) async {
     final imageToDelete = _imageFileList[index];
@@ -1850,7 +1865,7 @@ class _EditHousePageState extends State<EditHousePage> {
       final updatedHouseData = {...widget.houseData, ..._changedFields};
       Navigator.of(context).pop(updatedHouseData);
     } else {
-      print('Failed to edit house: ${response.statusCode}');
+      ('更新失敗: ${response.statusCode}');
     }
   }
 
@@ -1955,7 +1970,7 @@ class _EditHousePageState extends State<EditHousePage> {
                         context: context,
                         builder: (BuildContext context) {
                           return ListView(
-                              padding: EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(16),
                               children: [
                                 const Text('選擇地區',
                                     textAlign: TextAlign.center,
@@ -2271,7 +2286,7 @@ class _EditHousePageState extends State<EditHousePage> {
                       Expanded(
                         child: Container(
                           height: 50,
-                          margin: EdgeInsets.only(bottom: 5, top: 5),
+                          margin: const EdgeInsets.only(bottom: 5, top: 5),
                           child: TextFormField(
                             controller: atfloorController,
                             decoration: const InputDecoration(
@@ -2297,11 +2312,12 @@ class _EditHousePageState extends State<EditHousePage> {
                           ),
                         ),
                       ),
-                      SizedBox(width: 10),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Container(
                           height: 50,
-                          margin: EdgeInsets.only(bottom: 5, top: 5, right: 5),
+                          margin: const EdgeInsets.only(
+                              bottom: 5, top: 5, right: 5),
                           child: TextFormField(
                             controller: allfloorController,
                             decoration: const InputDecoration(
@@ -2770,7 +2786,7 @@ class _EditHousePageState extends State<EditHousePage> {
                       },
                     ),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
                   Radio(
                     value: 0,
                     groupValue: _lessorgender,
@@ -2830,7 +2846,7 @@ class _EditHousePageState extends State<EditHousePage> {
                   _onFieldChanged('phone', value);
                 },
               ),
-              SizedBox(
+              const SizedBox(
                 height: 10,
               ),
               Column(
@@ -2872,13 +2888,13 @@ class _EditHousePageState extends State<EditHousePage> {
                   ),
                   Container(
                       height: _imageFileList.isEmpty ? 200.0 : null,
-                      margin: EdgeInsets.only(left: 20, right: 20),
+                      margin: const EdgeInsets.only(left: 20, right: 20),
                       decoration: BoxDecoration(
-                        color: Color(0xFFF5F0F0),
+                        color: const Color(0xFFF5F0F0),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: _imageFileList.isEmpty
-                          ? Center(
+                          ? const Center(
                               child: Text(
                                 '尚未新增房屋照片',
                                 textAlign: TextAlign.center,
@@ -2888,9 +2904,9 @@ class _EditHousePageState extends State<EditHousePage> {
                             )
                           : GridView.builder(
                               shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
+                              physics: const NeverScrollableScrollPhysics(),
                               gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 3,
                                 crossAxisSpacing: 4.0,
                                 mainAxisSpacing: 4.0,
@@ -2919,7 +2935,7 @@ class _EditHousePageState extends State<EditHousePage> {
                                       top: -5,
                                       right: -5,
                                       child: IconButton(
-                                        icon: Icon(Icons.delete),
+                                        icon: const Icon(Icons.delete),
                                         onPressed: () {
                                           _deleteImage(index);
                                         },
@@ -2929,7 +2945,7 @@ class _EditHousePageState extends State<EditHousePage> {
                                 );
                               },
                             )),
-                  SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
                   Align(

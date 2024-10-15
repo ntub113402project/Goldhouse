@@ -15,31 +15,35 @@ import 'pages/class.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await FavoriteManager().initializeFavorites();
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
       routes: {
-        '/register': (context) => RegisterPage(),
-        '/login': (context) => LoginPage(),
-        '/forgetpw': (context) => ForgetpwPage(),
-        '/search': (context) => SearchPage(),
-        '/personal': (context) => PersonalPage(),
-        '/controll': (context) => ControllPage(),
+        '/register': (context) => const RegisterPage(),
+        '/login': (context) => const LoginPage(),
+        '/forgetpw': (context) => const ForgetpwPage(),
+        '/search': (context) => const SearchPage(),
+        '/personal': (context) => const PersonalPage(),
+        '/controll': (context) => const ControllPage(),
       },
-      home: AppLinksHandler(), 
+      home: const AppLinksHandler(), 
     );
   }
 }
 
 class AppLinksHandler extends StatefulWidget {
+  const AppLinksHandler({super.key});
+
   @override
-  _AppLinksHandlerState createState() => _AppLinksHandlerState();
+  State<AppLinksHandler> createState() => _AppLinksHandlerState();
 }
 
 class _AppLinksHandlerState extends State<AppLinksHandler> {
@@ -82,12 +86,12 @@ class _AppLinksHandlerState extends State<AppLinksHandler> {
         ),
       );
     } else {
-      print('Failed to load house details: ${response.statusCode}');
+      ('Failed to load house details: ${response.statusCode}');
     }
   }
 }
   @override
   Widget build(BuildContext context) {
-    return ControllPage();
+    return const ControllPage();
   }
 }
