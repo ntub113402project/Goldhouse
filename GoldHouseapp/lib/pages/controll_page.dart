@@ -7,6 +7,8 @@ import 'subscription_page.dart';
 
 
 class ControllPage extends StatefulWidget {
+  const ControllPage({super.key});
+
   
   @override
   State<ControllPage> createState() => _ControllPageState();
@@ -15,14 +17,14 @@ class ControllPage extends StatefulWidget {
 class _ControllPageState extends State<ControllPage>{
   int currentTab = 0;
   final List<Widget> screens = [
-    HomePage(),
-    SearchPage(),
-    CreateHousePage(),
-    SubscriptionPage(),
-    AccountPage(),
+    const HomePage(),
+    const SearchPage(),
+    const CreateHousePage(),
+    const SubscriptionPage(),
+    const AccountPage(),
   ];
   final PageStorageBucket bucket = PageStorageBucket();
-  Widget currentScreen = HomePage();
+  Widget currentScreen = const HomePage();
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,7 @@ class _ControllPageState extends State<ControllPage>{
           onPressed: () {
             setState(() {
               currentTab = 0;  
-              currentScreen = HomePage();
+              currentScreen = const HomePage();
             });
           },
           shape: const RoundedRectangleBorder(
@@ -53,7 +55,7 @@ class _ControllPageState extends State<ControllPage>{
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
-        color: Color(0xFFECD8C9),
+        color: const Color(0xFFECD8C9),
         elevation: 0, 
         shape: const CircularNotchedRectangle(),
         notchMargin: 10,
@@ -109,7 +111,7 @@ class _ControllPageState extends State<ControllPage>{
           Icon(
             icon,
             size: 28,  
-            color: currentTab == index ? const Color(0xFF613F26)  : Color.fromARGB(255, 162, 159, 155),
+            color: currentTab == index ? const Color(0xFF613F26)  :const Color.fromARGB(255, 162, 159, 155),
           ),
           Text(
             label,

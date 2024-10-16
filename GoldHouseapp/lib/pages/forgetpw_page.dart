@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_application_1/pages/login_page.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ForgetpwPage extends StatefulWidget {
+  const ForgetpwPage({super.key});
+
   @override
   State<ForgetpwPage> createState() => _ForgetpwPageState();
 }
@@ -67,7 +68,7 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
         },
       );
     }
-    Future.delayed(Duration(minutes: 10), () {
+    Future.delayed(const Duration(minutes: 10), () {
       if (mounted) {
         setState(() {
           showverifyfield = false;
@@ -125,7 +126,7 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            content: Text('密碼與確認密碼不一致'),
+            content: const Text('密碼與確認密碼不一致'),
             actions: <Widget>[
               TextButton(
                 child: const Text('確認'),
@@ -162,7 +163,7 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
                   child: const Text('去登入'),
                   onPressed: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => LoginPage()),
+                      MaterialPageRoute(builder: (context) => const LoginPage()),
                     );
                   },
                 ),
@@ -245,19 +246,19 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
                 color: const Color(0xFFEFEBE9),
               ),
               child: Padding(
-                  padding: EdgeInsets.only(left: 10),
+                  padding: const EdgeInsets.only(left: 10),
                   child: TextField(
                     controller: gmailController,
                     decoration: InputDecoration(
                         hintText: ('請輸入電子郵件'),
-                        hintStyle: TextStyle(
+                        hintStyle: const TextStyle(
                             color: Color.fromARGB(255, 128, 111, 111)),
                         border: InputBorder.none,
                         suffixIcon: TextButton(
                             onPressed: sendemail,
                             style: TextButton.styleFrom(
-                                backgroundColor: Color(0xff613F26)),
-                            child: Text(
+                                backgroundColor: const Color(0xff613F26)),
+                            child: const Text(
                               '傳送驗證碼',
                               style: TextStyle(
                                   color: Color.fromARGB(255, 250, 247, 247)),
@@ -273,13 +274,9 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
                   color: const Color(0xFFEFEBE9),
                 ),
                 child: Padding(
-                    padding: EdgeInsets.only(left: 10),
+                    padding: const EdgeInsets.only(left: 10),
                     child: TextField(
                       controller: verifyController,
-                      // keyboardType: TextInputType.number,
-                      // inputFormatters: <TextInputFormatter>[
-                      //   FilteringTextInputFormatter.digitsOnly
-                      // ],
                       decoration: const InputDecoration(
                           hintText: ('請輸入驗證碼'),
                           hintStyle: TextStyle(
@@ -287,7 +284,7 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
                           border: InputBorder.none),
                     )),
               ),
-            SizedBox(
+            const SizedBox(
               height: 30,
             ),
             if (showverifyfield == true)
@@ -320,32 +317,32 @@ class _ForgetpwPageState extends State<ForgetpwPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('更新密碼'),
+          title: const Text('更新密碼'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: newPasswordController,
-                decoration: InputDecoration(labelText: '新密碼'),
+                decoration: const InputDecoration(labelText: '新密碼'),
                 obscureText: true,
               ),
               TextField(
                 controller: confirmPasswordController,
-                decoration: InputDecoration(labelText: '確認新密碼'),
+                decoration: const InputDecoration(labelText: '確認新密碼'),
                 obscureText: true,
               ),
             ],
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('取消'),
+              child: const Text('取消'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
-              child: Text('確認'),
+            TextButton(              
               onPressed: resetpassword,
+              child: const Text('確認'),
             ),
           ],
         );

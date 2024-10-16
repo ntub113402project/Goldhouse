@@ -3,12 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'class.dart';
 import 'housecard.dart';
 import 'housedetail_page.dart';
 
 class SubscriptionPage extends StatefulWidget {
+  const SubscriptionPage({super.key});
+
   @override
   State<SubscriptionPage> createState() => _SubscriptionPageState();
 }
@@ -16,13 +17,19 @@ class SubscriptionPage extends StatefulWidget {
 class _SubscriptionPageState extends State<SubscriptionPage> {
   List<Map<String, dynamic>> subscriptions = [];
   bool isLoading = true; 
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubscriptions();
+  }
   
   Future<void> _fetchProperties(
       Map<String, dynamic> subscription, int index) async {
     int? subscriptionId = subscriptions[index]['subscription_id'];
 
     if (subscriptionId == null) {
-      print('Subscription ID not found');
+      ('Subscription ID not found');
       return;
     }
 
@@ -41,7 +48,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         subscriptions[index]['properties'] = properties;
       });
     } else {
-      print('Failed to fetch properties');
+      ('加載失敗');
     }
   }
 
@@ -58,7 +65,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     int? memberId = prefs.getInt('member_id');
 
     if (memberId == null) {
-      print('Member ID not found');
+      ('尚未登入');
       setState(() {
         subscriptions = [];
         isLoading = false;
@@ -74,7 +81,6 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
-      print('Received data: $data');
       setState(() {
         subscriptions = data
             .map((item) => {
@@ -92,7 +98,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         isLoading = false;
       });
     } else {
-      print('Failed to fetch subscriptions');
+      ('Failed to fetch subscriptions');
       setState(() {
         isLoading = false;
       });
@@ -100,7 +106,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 
   void _addSubscription(Map<String, dynamic> subscription) async {
-    print('Adding subscription: $subscription');
+    ('Adding subscription: $subscription');
     final response = await http.post(
       Uri.parse('http://4.227.176.245:5000/manage_subscription'),
       headers: {'Content-Type': 'application/json'},
@@ -130,7 +136,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       }, subscriptions.length - 1);
       await _saveSubscriptions();
     } else {
-      print('Failed to add subscription');
+      ('新增失敗');
     }
   }
 
@@ -138,7 +144,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     int? subscriptionId = subscriptions[index]['subscription_id'];
 
     if (subscriptionId == null) {
-      print('Subscription ID not found');
+      ('Subscription ID not found');
       return;
     }
 
@@ -153,9 +159,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
         subscriptions.removeAt(index);
       });
       await _saveSubscriptions();
-      print('Subscription deleted successfully');
+      ('刪除成功');
     } else {
-      print('Failed to delete subscription');
+      ('刪除失敗');
     }
   }
 
@@ -164,7 +170,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     int? memberId = prefs.getInt('member_id');
 
     if (memberId == null) {
-      print('Member ID not found');
+      ('尚未登入');
       return;
     }
 
@@ -178,16 +184,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
 
     if (response.statusCode == 200) {
-      print('Last check time updated successfully');
+      ('更新時間成功');
     } else {
-      print('Failed to update last check time');
+      ('更新時間失敗');
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSubscriptions();
   }
 
   @override
@@ -218,17 +218,17 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                   context: context,
                   barrierDismissible: false,
                   builder: (BuildContext context) {
-                    Future.delayed(Duration(seconds: 2), () {
+                    Future.delayed(const Duration(seconds: 2), () {
                       Navigator.of(context).pop();
                     });
 
-                    return AlertDialog(
+                    return const AlertDialog(
                       backgroundColor: Color.fromARGB(255, 40, 40, 40),
                       title: Center(
                           child: Text(
                         '請先登入',
                         style: TextStyle(
-                            color: const Color.fromARGB(255, 243, 243, 243),
+                            color: Color.fromARGB(255, 243, 243, 243),
                             fontWeight: FontWeight.bold),
                       )),
                     );
@@ -287,11 +287,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       final subscription = subscriptions[index];
                       return Container(
                         decoration: BoxDecoration(
-                          color: Color.fromARGB(255, 247, 236, 205),
+                          color: const Color.fromARGB(255, 247, 236, 205),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Color.fromARGB(255, 177, 177, 162)
+                              color: const Color.fromARGB(255, 177, 177, 162)
                                   .withOpacity(0.5),
                               spreadRadius: 1,
                               blurRadius: 4,
@@ -300,7 +300,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                           ],
                         ),
                         margin:
-                            EdgeInsets.only(left: 10, right: 10, bottom: 20),
+                            const EdgeInsets.only(left: 10, right: 10, bottom: 20),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: Theme(
@@ -325,7 +325,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                       ),
                                     ),
                                     Text(
-                                      style: TextStyle(fontSize: 16),
+                                      style: const TextStyle(fontSize: 16),
                                       '類型：${subscription['pattern'] == null || subscription['pattern'].isEmpty ? '不限' : subscription['pattern'].join(', ')} \n租金：${subscription['rentalrange'].isEmpty ? '' : subscription['rentalrange']}\n格局：${subscription['roomcount']}\n坪數：${subscription['size']}\n型態：${subscription['type'] == null || subscription['type'].isEmpty ? '不限' : subscription['type'].join(', ')}',
                                     ),
                                   ],
@@ -354,7 +354,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                                       ),
                                     );
                                   } else {
-                                    print('subscription_id is null');
+                                    ('subscription_id is null');
                                   }
                                 },
                               )),
@@ -369,177 +369,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   }
 }
 
-class PropertyDetailsPage extends StatefulWidget {
-  final List<dynamic> properties;
-  final Map<String, dynamic> subscription;
-  final int subscriptionId;
-  final Future<void> Function(int) onReturn;
-
-  PropertyDetailsPage({
-    required this.properties,
-    required this.subscription,
-    required this.subscriptionId,
-    required this.onReturn,
-  });
-
-  @override
-  _PropertyDetailsPageState createState() => _PropertyDetailsPageState();
-}
-
-class _PropertyDetailsPageState extends State<PropertyDetailsPage> {
-  void _handlePop(bool value) {
-    widget.onReturn(widget.subscriptionId);
-  }
-
-  Future<void> _toggleFavorite(int index, String hid) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int? memberId = prefs.getInt('member_id');
-    if (memberId != null) {
-      bool isCurrentlyFavorite = FavoriteManager().favoriteHids.contains(hid);
-
-      String apiEndpoint = 'http://4.227.176.245:5000/favorites';
-      String method = isCurrentlyFavorite ? 'DELETE' : 'POST';
-
-      setState(() {
-        if (isCurrentlyFavorite) {
-          FavoriteManager().favoriteHids.remove(hid);
-        } else {
-          FavoriteManager().favoriteHids.add(hid);
-        }
-        widget.properties[index]['isFavorite'] = !isCurrentlyFavorite;
-      });
-
-      final request = http.Request(method, Uri.parse(apiEndpoint))
-        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
-        ..body = jsonEncode(<String, String>{
-          'member_id': memberId.toString(),
-          'hid': hid,
-        });
-
-      final streamedResponse = await request.send();
-      final responseBody = await streamedResponse.stream.bytesToString();
-
-      if (streamedResponse.statusCode != 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('操作失敗: $responseBody')),
-        );
-
-        // 如果後端更新失敗，恢復本地收藏狀態
-        setState(() {
-          if (isCurrentlyFavorite) {
-            FavoriteManager().favoriteHids.add(hid);
-          } else {
-            FavoriteManager().favoriteHids.remove(hid);
-          }
-          widget.properties[index]['isFavorite'] = isCurrentlyFavorite;
-        });
-      } else {
-        // 成功後更新 SharedPreferences
-        prefs.setStringList(
-            'favoriteHids', FavoriteManager().favoriteHids.toList());
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('請先登入')),
-      );
-    }
-  }
-
-  Future <void> fetchHouseDetails(BuildContext context, String hid) async {
-    final response =
-        await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
-
-    if (response.statusCode == 200) {
-      final houseDetails = json.decode(response.body);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CreateHouseDetailPage(houseData: houseDetails),
-        ),
-      );
-    } else {
-      print(response.body);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load house details')),
-      );
-    }
-  }
-
-  Future <void> clickrecord(int memberId, String hid) async {
-    final response = await http.post(
-      Uri.parse('http://4.227.176.245:5000//record_click'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'member_id': memberId,
-        'hid': hid,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      print('Click recorded successfully');
-    } else {
-      print('Failed to record click: ${response.body}');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      onPopInvoked: _handlePop,
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: const Color(0xFFECD8C9),
-          title: Text(
-            '${widget.subscription['city']} - 房屋结果',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          centerTitle: true,
-        ),
-        body: widget.properties.isEmpty
-            ? Center(
-                child: Text(
-                  '尚未有新刊登的房屋',
-                  style: TextStyle(
-                      fontSize: 20, color: Color.fromARGB(255, 181, 181, 181)),
-                ),
-              )
-            : ListView.builder(
-                itemCount: widget.properties.length,
-                itemBuilder: (context, index) {
-                  final property = widget.properties[index];
-                  bool isFavorite = FavoriteManager()
-                      .favoriteHids
-                      .contains(property['hid'].toString());
-                  return HouseCard(
-                    houseData: property,
-                    isFavorite: isFavorite,
-                    onFavoriteToggle: () =>
-                        _toggleFavorite(index, property['hid']),
-                    onTap: () async {
-                      SharedPreferences prefs =
-                          await SharedPreferences.getInstance();
-                      int? memberId = prefs.getInt('member_id');
-
-                      if (memberId != null) {
-                        await clickrecord(memberId, property['hid']);
-                      }
-
-                      fetchHouseDetails(context, property['hid']);
-                    },
-                  );
-                },
-              ),
-      ),
-    );
-  }
-}
-
 class AddSubscriptionPage extends StatefulWidget {
   final Function(Map<String, dynamic>) onSubmit;
-
-  AddSubscriptionPage({super.key, required this.onSubmit});
+                                     
+  const AddSubscriptionPage({super.key, required this.onSubmit});
 
   @override
   State<AddSubscriptionPage> createState() => _AddSubscriptionPageState();
@@ -587,7 +420,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       context: context,
       builder: (BuildContext context) {
         return ListView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           children: [
             const Text('選擇地區',
                 textAlign: TextAlign.center,
@@ -620,7 +453,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     const Text('選擇地區',
@@ -690,7 +523,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return Padding(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   const Text('房屋類型',
@@ -889,7 +722,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
       context: context,
       builder: (BuildContext context) {
         return ListView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           children: [
             const Text('格局',
                 textAlign: TextAlign.center,
@@ -917,7 +750,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
     String? selectedHouseSize = await showModalBottomSheet<String>(
       context: context,
       builder: (BuildContext context) {
-        return ListView(padding: EdgeInsets.all(16), children: [
+        return ListView(padding: const EdgeInsets.all(16), children: [
           const Text('坪數',
               textAlign: TextAlign.center,
               style: TextStyle(
@@ -928,8 +761,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               .map((housesize) => ListTile(
                     title: Text(housesize),
                     onTap: () => Navigator.pop(context, housesize),
-                  ))
-              .toList(),
+                  )),
         ]);
       },
     );
@@ -949,7 +781,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
             return Padding(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     const Text('房屋型態',
@@ -1031,33 +863,33 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
             ListTile(
               title:
                   Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-                Text(
+                const Text(
                   '縣市：',
                   style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                 ),
                 Expanded(
                     child: Text(
                   _selectedCity,
-                  style: TextStyle(fontSize: 17),
+                  style: const TextStyle(fontSize: 17),
                 ))
               ]),
-              trailing: Icon(Icons.arrow_drop_down),
+              trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectCity,
             ),
-            Divider(
+            const Divider(
               height: 5,
             ),
             ListTile(
               title: Row(
                 children: [
-                  Text(
+                  const Text(
                     '地區：',
                     style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                   ),
                   Expanded(
                       child: Text(
                     _selectedAreas.isEmpty ? '不限' : _selectedAreas.join(', '),
-                    style: TextStyle(fontSize: 17),
+                    style: const TextStyle(fontSize: 17),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ))
@@ -1066,20 +898,20 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectAreas,
             ),
-            Divider(
+            const Divider(
               height: 5,
             ),
             ListTile(
               title: Row(
                 children: [
-                  Text(
+                  const Text(
                     '房屋類型：',
                     style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                   ),
                   Expanded(
                     child: Text(
                       _selectedtype.isEmpty ? '不限' : _selectedtype.join(', '),
-                      style: TextStyle(fontSize: 17),
+                      style: const TextStyle(fontSize: 17),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
@@ -1089,20 +921,20 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selecttype,
             ),
-            Divider(
+            const Divider(
               height: 5,
             ),
             ListTile(
               title: Row(
                 children: [
-                  Text(
+                  const Text(
                     '租金範圍：',
                     style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                   ),
                   Expanded(
                     child: Text(
                       _selectedRentalRange,
-                      style: TextStyle(fontSize: 17),
+                      style: const TextStyle(fontSize: 17),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
@@ -1112,20 +944,20 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               trailing: const Icon(Icons.arrow_drop_down),
               onTap: () => _rentalBottomSheet(context),
             ),
-            Divider(
+            const Divider(
               height: 5,
             ),
             ListTile(
               title: Row(
                 children: [
-                  Text(
+                  const Text(
                     '格局：',
                     style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                   ),
                   Expanded(
                     child: Text(
                       _selectedRoomCount.isEmpty ? '不限' : _selectedRoomCount,
-                      style: TextStyle(fontSize: 17),
+                      style: const TextStyle(fontSize: 17),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
@@ -1135,20 +967,20 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectRoomCount,
             ),
-            Divider(
+            const Divider(
               height: 5,
             ),
             ListTile(
               title: Row(
                 children: [
-                  Text(
+                  const Text(
                     '坪數：',
                     style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                   ),
                   Expanded(
                     child: Text(
                       _selectedHouseSize.isEmpty ? '不限' : _selectedHouseSize,
-                      style: TextStyle(fontSize: 17),
+                      style: const TextStyle(fontSize: 17),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
@@ -1158,20 +990,20 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectHouseSize,
             ),
-            Divider(
+            const Divider(
               height: 5,
             ),
             ListTile(
               title: Row(
                 children: [
-                  Text(
+                  const Text(
                     '房屋型態：',
                     style: TextStyle(color: Color(0xFF613F26), fontSize: 20),
                   ),
                   Expanded(
                     child: Text(
                       _selectedTypes.isEmpty ? '不限' : _selectedTypes.join(', '),
-                      style: TextStyle(fontSize: 17),
+                      style: const TextStyle(fontSize: 17),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                     ),
@@ -1181,7 +1013,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
               trailing: const Icon(Icons.arrow_drop_down),
               onTap: _selectTypes,
             ),
-            SizedBox(
+            const SizedBox(
               height: 20,
             ),
             ElevatedButton(
@@ -1192,7 +1024,7 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
                 int? memberid = prefs.getInt('member_id');
 
                 if (memberid == null) {
-                  print('Member ID not found');
+                  ('Member ID not found');
                   return;
                 }
 
@@ -1217,6 +1049,173 @@ class _AddSubscriptionPageState extends State<AddSubscriptionPage> {
             )
           ],
         ),
+      ),
+    );
+  }
+}
+
+class PropertyDetailsPage extends StatefulWidget {
+  final List<dynamic> properties;
+  final Map<String, dynamic> subscription;
+  final int subscriptionId;
+  final Future<void> Function(int) onReturn;
+
+  const PropertyDetailsPage({super.key, 
+    required this.properties,
+    required this.subscription,
+    required this.subscriptionId,
+    required this.onReturn,
+  });
+
+  @override
+  PropertyDetailsPageState createState() => PropertyDetailsPageState();
+}
+
+class PropertyDetailsPageState extends State<PropertyDetailsPage> {
+  void _handlePop(bool value) {
+    widget.onReturn(widget.subscriptionId);
+  }
+
+  Future<void> _toggleFavorite(int index, String hid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+    if (memberId != null) {
+      bool isCurrentlyFavorite = FavoriteManager().favoriteHids.contains(hid);
+
+      String apiEndpoint = 'http://4.227.176.245:5000/favorites';
+      String method = isCurrentlyFavorite ? 'DELETE' : 'POST';
+
+      setState(() {
+        if (isCurrentlyFavorite) {
+          FavoriteManager().favoriteHids.remove(hid);
+        } else {
+          FavoriteManager().favoriteHids.add(hid);
+        }
+        widget.properties[index]['isFavorite'] = !isCurrentlyFavorite;
+      });
+
+      final request = http.Request(method, Uri.parse(apiEndpoint))
+        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+        ..body = jsonEncode(<String, String>{
+          'member_id': memberId.toString(),
+          'hid': hid,
+        });
+
+      final streamedResponse = await request.send();
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失敗: $responseBody')),
+        );
+
+        // 如果後端更新失敗，恢復本地收藏狀態
+        setState(() {
+          if (isCurrentlyFavorite) {
+            FavoriteManager().favoriteHids.add(hid);
+          } else {
+            FavoriteManager().favoriteHids.remove(hid);
+          }
+          widget.properties[index]['isFavorite'] = isCurrentlyFavorite;
+        });
+      } else {
+        prefs.setStringList(
+            'favoriteHids', FavoriteManager().favoriteHids.toList());
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請先登入')),
+      );
+    }
+  }
+
+  Future <void> fetchHouseDetails(BuildContext context, String hid) async {
+    final response =
+        await http.get(Uri.parse('http://4.227.176.245:5000/houses/$hid'));
+  
+    if (response.statusCode == 200) {
+      final houseDetails = json.decode(response.body);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CreateHouseDetailPage(houseData: houseDetails),
+        ),
+      );
+    } else {
+      (response.body);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('加載失敗')),
+      );
+    }
+  }
+
+  Future <void> clickrecord(int memberId, String hid) async {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000//record_click'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'member_id': memberId,
+        'hid': hid,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      ('Click recorded successfully');
+    } else {
+      ('Failed to record click: ${response.body}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      onPopInvoked: _handlePop,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFECD8C9),
+          title: Text(
+            '${widget.subscription['city']} - 房屋结果',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+        ),
+        body: widget.properties.isEmpty
+            ? const Center(
+                child: Text(
+                  '尚未有新刊登的房屋',
+                  style: TextStyle(
+                      fontSize: 20, color: Color.fromARGB(255, 181, 181, 181)),
+                ),
+              )
+            : ListView.builder(
+                itemCount: widget.properties.length,
+                itemBuilder: (context, index) {
+                  final property = widget.properties[index];
+                  bool isFavorite = FavoriteManager()
+                      .favoriteHids
+                      .contains(property['hid'].toString());
+                  return HouseCard(
+                    houseData: property,
+                    isFavorite: isFavorite,
+                    onFavoriteToggle: () =>
+                        _toggleFavorite(index, property['hid']),
+                    onTap: () async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      int? memberId = prefs.getInt('member_id');
+
+                      if (memberId != null) {
+                        await clickrecord(memberId, property['hid']);
+                      }
+
+                      fetchHouseDetails(context, property['hid']);
+                    },
+                  );
+                },
+              ),
       ),
     );
   }

@@ -10,6 +10,8 @@ import 'housedetail_page.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class SearchPage extends StatefulWidget {
+  const SearchPage({super.key});
+
   @override
   State<SearchPage> createState() => _SearchPageState();
 }
@@ -49,7 +51,7 @@ class _SearchPageState extends State<SearchPage> {
                   labelColor: const Color(0xFF613F26),
                   unselectedLabelColor: Colors.grey,
                   labelStyle: const TextStyle(fontSize: 20),
-                  tabs: [
+                  tabs: const [
                     Tab(text: '地區'),
                     Tab(text: '捷運'),
                   ],
@@ -57,7 +59,7 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
           ),
-          Expanded(
+          const Expanded(
             child: TabBarView(
               children: [
                 AreaSearchPage(),
@@ -73,14 +75,13 @@ class _SearchPageState extends State<SearchPage> {
 
 class SearchResultPage extends StatefulWidget {
   final List<dynamic> searchResults;
-
   const SearchResultPage({super.key, required this.searchResults});
 
   @override
-  _SearchResultPageState createState() => _SearchResultPageState();
+  SearchResultPageState createState() => SearchResultPageState();
 }
 
-class _SearchResultPageState extends State<SearchResultPage> {
+class SearchResultPageState extends State<SearchResultPage> {
   List<dynamic> _displayResults = [];
   int _currentMax = 8;
   late ScrollController _scrollController;
@@ -99,9 +100,9 @@ class _SearchResultPageState extends State<SearchResultPage> {
     );
 
     if (response.statusCode == 200) {
-      print('Click recorded successfully');
+      ('Click recorded successfully');
     } else {
-      print('Failed to record click: ${response.body}');
+      ('Failed to record click: ${response.body}');
     }
   }
 
@@ -135,7 +136,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
         ),
       );
     } else {
-      print(response.body);
+      (response.body);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load house details')),
       );
@@ -209,7 +210,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('請先登入')),
+        const SnackBar(content: Text('請先登入')),
       );
     }
   }
@@ -226,7 +227,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
         backgroundColor: const Color(0xFFECD8C9),
       ),
       body: _displayResults.isEmpty
-          ? Center(
+          ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -310,6 +311,8 @@ class _SearchResultPageState extends State<SearchResultPage> {
 }
 
 class AreaSearchPage extends StatefulWidget {
+  const AreaSearchPage({super.key});
+
   @override
   State<AreaSearchPage> createState() => _AreaSearchPageState();
 }
@@ -377,12 +380,12 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
           'city': _selectedCity == '不限' ? null : _selectedCity,
           'district': _selectedDistrict == '不限' ? null : _selectedDistrict,
           'room_type': _selectedRoomType == '不限' ? null : _selectedRoomType,
-          'rental_range': rentalRangeList == null ? null : rentalRangeList,
+          'rental_range': rentalRangeList,
           'room_count': _selectedRoomCount == '不限'
               ? null
               : int.tryParse(_selectedRoomCount.replaceAll('房', '').trim()) ??
                   4,
-          'house_size': houseSizeList == null ? null : houseSizeList,
+          'house_size': houseSizeList,
           'house_type': _selectedHouseType == '不限' ? null : _selectedHouseType,
           'other_options': _selectedOtherOptions.isNotEmpty
               ? _selectedOtherOptions.join(',')
@@ -903,6 +906,7 @@ class _AreaSearchPageState extends State<AreaSearchPage> {
 }
 
 class CityPage extends StatelessWidget {
+  CityPage({super.key});
   final List<String> cities = [
     '臺北市',
     '新北市',
@@ -914,6 +918,8 @@ class CityPage extends StatelessWidget {
     '新竹市',
     '高雄市',
   ];
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -972,7 +978,7 @@ class CityPage extends StatelessWidget {
 class DistrictPage extends StatefulWidget {
   final String city;
 
-  DistrictPage({Key? key, required this.city}) : super(key: key);
+  const DistrictPage({super.key, required this.city});
 
   @override
   State<DistrictPage> createState() => _DistrictPageState();
@@ -1054,6 +1060,8 @@ class _DistrictPageState extends State<DistrictPage> {
 }
 
 class MRTSearchPage extends StatefulWidget {
+  const MRTSearchPage({super.key});
+
   @override
   State<MRTSearchPage> createState() => _MRTSearchPageState();
 }
@@ -1547,6 +1555,8 @@ class _MRTSearchPageState extends State<MRTSearchPage> {
 
 class CityMRTPage extends StatelessWidget {
   final List<String> citiesMRT = ['台北捷運', '高雄捷運'];
+
+  CityMRTPage({super.key});
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1577,7 +1587,7 @@ class CityMRTPage extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          MRTCombinedPage(MRT: citiesMRT[index]),
+                          MRTCombinedPage(mrt: citiesMRT[index]),
                     ),
                   ).then((result) {
                     if (result != null) {
@@ -1602,9 +1612,9 @@ class CityMRTPage extends StatelessWidget {
 }
 
 class MRTCombinedPage extends StatefulWidget {
-  final String MRT;
+  final String mrt;
 
-  MRTCombinedPage({required this.MRT});
+  const MRTCombinedPage({super.key, required this.mrt});
 
   @override
   State<MRTCombinedPage> createState() => _MRTCombinedPageState();
@@ -1630,20 +1640,20 @@ class _MRTCombinedPageState extends State<MRTCombinedPage> {
   void _onLineChanged(String? line) {
     setState(() {
       _selectedLine = line;
-      _stations = mrtData[widget.MRT]?[line ?? ''] ?? [];
+      _stations = mrtData[widget.mrt]?[line ?? ''] ?? [];
       _selectedStation = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final lines = mrtData[widget.MRT]?.keys.toList() ?? [];
+    final lines = mrtData[widget.mrt]?.keys.toList() ?? [];
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFFECD8C9),
         title: Text(
-          widget.MRT,
+          widget.mrt,
           style: const TextStyle(
               color: Color(0xFF613F26),
               fontWeight: FontWeight.bold,
@@ -1657,7 +1667,7 @@ class _MRTCombinedPageState extends State<MRTCombinedPage> {
               onTap: () {
                 if (_selectedLine != null && _selectedStation != null) {
                   Navigator.pop(context, {
-                    'MRT': widget.MRT,
+                    'MRT': widget.mrt,
                     'line': _selectedLine,
                     'station': _selectedStation,
                   });

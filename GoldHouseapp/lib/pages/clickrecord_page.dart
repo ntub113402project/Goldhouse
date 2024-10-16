@@ -8,8 +8,10 @@ import 'housecard.dart';
 import 'housedetail_page.dart';
 
 class ClickHistoryPage extends StatefulWidget {
+  const ClickHistoryPage({super.key});
+
   @override
-  _ClickHistoryPageState createState() => _ClickHistoryPageState();
+  State<ClickHistoryPage> createState() => _ClickHistoryPageState();
 }
 
 class _ClickHistoryPageState extends State<ClickHistoryPage> {
@@ -27,7 +29,6 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
     int? memberId = prefs.getInt('member_id');
     if (memberId != null) {
       bool isCurrentlyFavorite = FavoriteManager().favoriteHids.contains(hid);
-
       String apiEndpoint = 'http://4.227.176.245:5000/favorites';
       String method = isCurrentlyFavorite ? 'DELETE' : 'POST';
 
@@ -71,7 +72,7 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('請先登入')),
+        const SnackBar(content: Text('請先登入')),
       );
     }
   }
@@ -94,14 +95,14 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
         setState(() {
           _isLoading = false;
         });
-        print('Failed to load click history: ${response.body}');
+        ('加載問題: ${response.body}');
       }
     } else {
       setState(() {
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('請先登入')),
+        const SnackBar(content: Text('請先登入')),
       );
     }
   }
@@ -119,7 +120,7 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
         ),
       );
     } else {
-      print(response.body);
+      (response.body);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load house details')),
       );
@@ -148,14 +149,14 @@ class _ClickHistoryPageState extends State<ClickHistoryPage> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
-        actions: [TextButton(onPressed: _clearclickrecord, child: Text('清除'))],
+        actions: [TextButton(onPressed: _clearclickrecord, child: const Text('清除'))],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator(
+          ? const Center(child: CircularProgressIndicator(
             color: Color(0xFF613F26),
           ))
           : _clickHistory.isEmpty
-              ? Center(child: Text('尚無瀏覽紀錄'))
+              ? const Center(child: Text('尚無瀏覽紀錄'))
               : ListView.builder(
                   itemCount: _clickHistory.length,
                   itemBuilder: (context, index) {

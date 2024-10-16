@@ -8,13 +8,13 @@ class HouseCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const HouseCard({
-    Key? key,
+    super.key,
     required this.houseData,
     required this.isFavorite,
-    this.showFavoriteIcon = true, // 默認顯示愛心圖標
+    this.showFavoriteIcon = true, 
     required this.onFavoriteToggle,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +63,7 @@ class HouseCard extends StatelessWidget {
                             width: MediaQuery.of(context).size.width * 0.35,
                             height: double.infinity,
                             errorBuilder: (context, error, stackTrace) {
-                              return Image(
+                              return const Image(
                                   image: AssetImage('assets/Logo.png'));
                             },
                           ),
@@ -77,7 +77,7 @@ class HouseCard extends StatelessWidget {
                             icon: Icon(isFavorite
                                 ? Icons.favorite
                                 : Icons.favorite_border),
-                            color: Color.fromARGB(255, 168, 26, 16),
+                            color: const Color.fromARGB(255, 168, 26, 16),
                             onPressed: onFavoriteToggle,
                           ),
                         ),

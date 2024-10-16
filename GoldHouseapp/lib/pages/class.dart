@@ -47,67 +47,67 @@ final List<House> houses = [
   ];
 
 
-final Map<String, bool> furnitureMap = {
-    '沙發': true,
-    '冷氣': false,
-    '電視 ': true,
-    '陽台': false,
-    '冰箱': true,
-    '電熱水器': false,
-    '桌子': true,
-    '衣櫃': true,
-    '床頭櫃': false,
-    '椅子': true,
-  };
+// final Map<String, bool> furnitureMap = {
+//     '沙發': true,
+//     '冷氣': false,
+//     '電視 ': true,
+//     '陽台': false,
+//     '冰箱': true,
+//     '電熱水器': false,
+//     '桌子': true,
+//     '衣櫃': true,
+//     '床頭櫃': false,
+//     '椅子': true,
+//   };
 
-class HouseDetail {
-  final String hid;
-  final String url;
-  final String title;
-  final String pattern;
-  final String size;
-  final String layer;
-  final String type;
-  final int price;
-  final String deposit;
-  final String address;
-  final String subway;
-  final String bus;
+// class HouseDetail {
+//   final String hid;
+//   final String url;
+//   final String title;
+//   final String pattern;
+//   final String size;
+//   final String layer;
+//   final String type;
+//   final int price;
+//   final String deposit;
+//   final String address;
+//   final String subway;
+//   final String bus;
 
-  HouseDetail({
-    required this.hid,
-    required this.url,
-    required this.title,
-    required this.pattern,
-    required this.size,
-    required this.layer,
-    required this.type,
-    required this.price,
-    required this.deposit,
-    required this.address,
-    required this.subway,
-    required this.bus,
-  });
+//   HouseDetail({
+//     required this.hid,
+//     required this.url,
+//     required this.title,
+//     required this.pattern,
+//     required this.size,
+//     required this.layer,
+//     required this.type,
+//     required this.price,
+//     required this.deposit,
+//     required this.address,
+//     required this.subway,
+//     required this.bus,
+//   });
 
-}   
+// }   
 
-List<String> allservices = [
-    '冰箱',
-    '洗衣機',
-    '電視',
-    '冷氣',
-    '熱水器',
-    '瓦斯',
-    '床',
-    '衣櫃',
-    '第四台',
-    '沙發',
-    '桌椅',
-    '陽台',
-    '電梯',
-    '車位',
-    '廚房'
-  ];
+// List<String> allservices = [
+//     '冰箱',
+//     '洗衣機',
+//     '電視',
+//     '冷氣',
+//     '熱水器',
+//     '瓦斯',
+//     '床',
+//     '衣櫃',
+//     '第四台',
+//     '沙發',
+//     '桌椅',
+//     '陽台',
+//     '電梯',
+//     '車位',
+//     '廚房'
+//   ];
 
 List<String> allservices1 = [
     '冰箱',
@@ -127,23 +127,23 @@ List<String> allservices1 = [
     '車位',
   ];
 
-final Map<String, IconData> servicesIcons = {
-    '冰箱': Icons.kitchen_rounded,
-    '洗衣機': Icons.local_laundry_service_rounded,
-    '電視': Icons.tv_rounded,
-    '冷氣': Icons.ac_unit_rounded,
-    '熱水器': Icons.water_damage_rounded,
-    '瓦斯': Icons.fireplace_rounded,
-    '床': Icons.bed_rounded,
-    '衣櫃': Icons.storage,
-    '第四台': Icons.cable_rounded,
-    '沙發': Icons.weekend_rounded,
-    '桌椅': Icons.event_seat_rounded,
-    '陽台': Icons.balcony_rounded,
-    '電梯': Icons.elevator_rounded,
-    '車位': Icons.local_parking_rounded,
-    '廚房': Icons.restaurant_menu_rounded
-  };
+// final Map<String, IconData> servicesIcons = {
+//     '冰箱': Icons.kitchen_rounded,
+//     '洗衣機': Icons.local_laundry_service_rounded,
+//     '電視': Icons.tv_rounded,
+//     '冷氣': Icons.ac_unit_rounded,
+//     '熱水器': Icons.water_damage_rounded,
+//     '瓦斯': Icons.fireplace_rounded,
+//     '床': Icons.bed_rounded,
+//     '衣櫃': Icons.storage,
+//     '第四台': Icons.cable_rounded,
+//     '沙發': Icons.weekend_rounded,
+//     '桌椅': Icons.event_seat_rounded,
+//     '陽台': Icons.balcony_rounded,
+//     '電梯': Icons.elevator_rounded,
+//     '車位': Icons.local_parking_rounded,
+//     '廚房': Icons.restaurant_menu_rounded
+//   };
 
   final Map<String, IconData> servicesIcons1 = {
     '冰箱': Icons.kitchen_rounded,

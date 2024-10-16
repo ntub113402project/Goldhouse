@@ -5,6 +5,7 @@ import 'class.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'housecard.dart';
 
 class HouseDetailPage extends StatefulWidget {
   final Map<String, dynamic> houseDetails;
@@ -17,6 +18,8 @@ class HouseDetailPage extends StatefulWidget {
 
 class _HouseDetailPageState extends State<HouseDetailPage> {
   int _current = 0;
+  List<Map<String, dynamic>> similarHouses = [];
+  
 
   Future<int?> _getMemberId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -52,70 +55,87 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
             mode: LaunchMode.externalApplication,
           );
         } else {
-          print('Could not launch $url');
+          ('無法連結 $url');
         }
       } else {
-        print('Failed to send data to Flask API: ${response.statusCode}');
+        ('無法連線: ${response.statusCode}');
       }
     } else {
-      print('Member ID or HID is missing');
+      ('尚未登入或沒有hid');
     }
   }
 
-  Widget _buildIntroduce() {
-    return Card(
-      color: const Color(0xFFECD8C9),
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundImage: NetworkImage(
-                      'https://img1.591.com.tw/user/2023/05/09/1683641201851.jpg!100x100.jpg'),
-                  radius: 30.0,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.houseDetails['lessorname'],
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text(widget.houseDetails['ownerType'],
-                        style: TextStyle(fontSize: 15)),
-                  ],
-                )
-              ],
-            ),
-            const SizedBox(height: 15),
-            Text(
-              widget.houseDetails['content'],
-              style: const TextStyle(fontSize: 18),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.center,
-              child: TextButton(
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFFA58484),
-                ),
-                onPressed: () => _showBottomSheet(context),
-                child: const Text(
-                  '查看更多',
-                  style: TextStyle(color: Color.fromRGBO(247, 247, 246, 1)),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+  Future<void> clickrecord(int memberId, String hid) async {
+    final response = await http.post(
+      Uri.parse('http://4.227.176.245:5000/record_click'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'member_id': memberId,
+        'hid': hid,
+      }),
     );
+
+    if (response.statusCode == 200) {
+      ('Click recorded successfully');
+    } else {
+      ('Failed to record click: ${response.body}');
+    }
+  }
+
+  Future<void> _toggleFavorite(int index, String hid) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int? memberId = prefs.getInt('member_id');
+    if (memberId != null) {
+      bool isCurrentlyFavorite = FavoriteManager().favoriteHids.contains(hid);
+
+      String apiEndpoint = 'http://4.227.176.245:5000/favorites';
+      String method = isCurrentlyFavorite ? 'DELETE' : 'POST';
+
+      setState(() {
+        if (isCurrentlyFavorite) {
+          FavoriteManager().favoriteHids.remove(hid);
+        } else {
+          FavoriteManager().favoriteHids.add(hid);
+        }
+        similarHouses[index]['isFavorite'] = !isCurrentlyFavorite;
+      });
+
+      final request = http.Request(method, Uri.parse(apiEndpoint))
+        ..headers['Content-Type'] = 'application/json; charset=UTF-8'
+        ..body = jsonEncode(<String, String>{
+          'member_id': memberId.toString(),
+          'hid': hid,
+        });
+
+      final streamedResponse = await request.send();
+      final responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('操作失敗: $responseBody')),
+        );
+
+        // 如果後端更新失敗，恢復本地收藏狀態
+        setState(() {
+          if (isCurrentlyFavorite) {
+            FavoriteManager().favoriteHids.add(hid);
+          } else {
+            FavoriteManager().favoriteHids.remove(hid);
+          }
+          similarHouses[index]['isFavorite'] = isCurrentlyFavorite;
+        });
+      } else {
+        // 成功後更新 SharedPreferences
+        prefs.setStringList(
+            'favoriteHids', FavoriteManager().favoriteHids.toList());
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請先登入')),
+      );
+    }
   }
 
   void _showBottomSheet(
@@ -143,7 +163,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
     List<String> imageUrlList =
         List<String>.from(widget.houseDetails['imageUrl']);
     if (imageUrlList.isEmpty) {
-      imageUrlList = ['assets/Logo.png']; 
+      imageUrlList = ['assets/Logo.png'];
     }
     List<Widget> allImages = imageUrlList
         .map<Widget>((url) => Image.network(url, fit: BoxFit.fill, width: 1000,
@@ -152,6 +172,8 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
               return const Image(image: AssetImage('assets/Logo.png'));
             }))
         .toList();
+    similarHouses =
+        List<Map<String, dynamic>>.from(widget.houseDetails['similarhouses']);
 
     return Scaffold(
         appBar: AppBar(
@@ -178,7 +200,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                   items: allImages,
                   options: CarouselOptions(
                     autoPlay: true,
-                    autoPlayInterval: Duration(seconds: 4),
+                    autoPlayInterval: const Duration(seconds: 4),
                     enlargeCenterPage: false,
                     aspectRatio: 1.5,
                     viewportFraction: 1,
@@ -252,21 +274,21 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
               child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    const Row(
                       children: [
-                        const Text(
+                        Text(
                           '租金\n包含',
                           style: TextStyle(
                             color: Color(0xFFD1C0C0),
                             fontSize: 16,
                           ),
                         ),
-                        const SizedBox(
+                        SizedBox(
                           width: 10,
                         ),
                         Text(
                           '水費|電費',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             color: Color(0xFFD1C0C0),
                           ),
@@ -301,18 +323,18 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                     )
                   ]),
             ),
-            SizedBox(
+            const SizedBox(
               height: 10,
             ),
             Container(
-              padding: EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
-              margin: EdgeInsets.all(15),
+              padding: const EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
+              margin: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: const Color(0xFFECD8C9),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    color: const Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 5),
@@ -322,7 +344,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
               alignment: Alignment.center,
               child: Text(
                 '${widget.houseDetails['city']}${widget.houseDetails['address']}',
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 18,
                     color: Color(0xFF613F26),
                     fontWeight: FontWeight.bold),
@@ -338,7 +360,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                     color: Color(0xFF613F26)),
               ),
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Container(
               margin: const EdgeInsets.only(left: 15, right: 15),
               padding: const EdgeInsets.all(10),
@@ -348,7 +370,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                 color: const Color(0xFFECD8C9),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    color: const Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 5),
@@ -359,8 +381,8 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                 direction: Axis.horizontal,
                 spacing: 3,
                 runSpacing: 5,
-                children: widget.houseDetails['service'].entries
-                    .map<Widget>((entry) {
+                children:
+                    widget.houseDetails['service'].entries.map<Widget>((entry) {
                   bool isActive = entry.value;
                   return Container(
                     width: 80,
@@ -398,7 +420,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                 }).toList(),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 7,
             ),
             const ListTile(
@@ -410,18 +432,178 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
                     color: Color(0xFF613F26)),
               ),
             ),
-            SizedBox(
+            const SizedBox(
               height: 5,
             ),
-            _buildIntroduce(),
+            Card(
+              color: const Color(0xFFECD8C9),
+              margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: [
+                        const CircleAvatar(
+                          backgroundImage: NetworkImage(
+                              'https://img1.591.com.tw/user/2023/05/09/1683641201851.jpg!100x100.jpg'),
+                          radius: 30.0,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.houseDetails['lessorname'],
+                                style: const TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            Text(widget.houseDetails['ownerType'],
+                                style: const TextStyle(fontSize: 15)),
+                          ],
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () async {
+                            final Uri url = Uri(
+                                scheme: 'tel',
+                                path: widget.houseDetails['phone']);
+
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url);
+                            } else {
+                              throw '不能撥打 $url';
+                            }
+                          },
+                          icon: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFF613F26),
+                                width: 2.0,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.phone,
+                              color: Color(0xFF613F26),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    Text(
+                      widget.houseDetails['content'],
+                      style: const TextStyle(fontSize: 18),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: const Color(0xFFA58484),
+                        ),
+                        onPressed: () => _showBottomSheet(context),
+                        child: const Text(
+                          '查看更多',
+                          style: TextStyle(
+                              color: Color.fromRGBO(247, 247, 246, 1)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(
+              height: 7,
+            ),
+            Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            const Divider(
+              color: Color(0xFF613F26),
+              thickness: 2,
+              indent: 20,
+              endIndent: 20,
+            ),
+            Container(
+              color: Colors.white, 
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: const Text('猜您喜歡',style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF613F26)),),
+            ),
+          ],
+        ),
             SizedBox(
-              height: 10,
-            )
+              height: 180,
+              child: PageView.builder(
+                controller: PageController(viewportFraction: 1),
+                itemCount: similarHouses.length,
+                itemBuilder: (context, index) {
+                  var houseData = similarHouses[index];
+                  bool isFavorite = FavoriteManager()
+                      .favoriteHids
+                      .contains(houseData['hid'].toString());
+                  return HouseCard(
+                    houseData: houseData,
+                    isFavorite: isFavorite,
+                    onFavoriteToggle: () =>
+                        _toggleFavorite(index, houseData['hid']),
+                    onTap: () async {
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      int? memberId = prefs.getInt('member_id');
+
+                      if (memberId != null) {
+                        await clickrecord(memberId, houseData['hid']);
+                      }
+                      String hid = houseData['hid'].toString();
+                      final response = await http.get(
+                        Uri.parse('http://4.227.176.245:5000/houses/$hid'),
+                      );
+
+                      if (response.statusCode == 200) {
+                        Map<String, dynamic> houseDetails =
+                            jsonDecode(response.body);
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                HouseDetailPage(houseDetails: houseDetails),
+                          ),
+                        );
+                      } else {
+                        ('加載失敗');
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(
+              height: 5,
+            ),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('滑動查看更多',style: TextStyle(fontSize: 18,color: Color.fromARGB(255, 137, 136, 136)),),
+                SizedBox(width: 4,),
+                Icon(Icons.arrow_circle_right_outlined,size: 23,color: Color.fromARGB(255, 137, 136, 136),)
+              ],
+            ),
+            const SizedBox(height: 10,)
+             
           ],
         ),
         bottomNavigationBar: GestureDetector(
           onTap: _onBottomAppBarPressed,
-          child: ClipRRect(
+          child: const ClipRRect(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(30),
                 topRight: Radius.circular(30),
@@ -470,7 +652,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
 
 class CreateHouseDetailPage extends StatefulWidget {
   final Map<String, dynamic> houseData;
-  CreateHouseDetailPage({Key? key, required this.houseData}) : super(key: key);
+  const CreateHouseDetailPage({super.key, required this.houseData});
   @override
   State<CreateHouseDetailPage> createState() => _CreateHouseDetailPageState();
 }
@@ -513,13 +695,13 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
             mode: LaunchMode.externalApplication,
           );
         } else {
-          print('Could not launch $url');
+          ('無法連結 $url');
         }
       } else {
-        print('Failed to send data to Flask API: ${response.statusCode}');
+        ('無法連線: ${response.statusCode}');
       }
     } else {
-      print('Member ID or HID is missing');
+      ('尚未登入或沒有hid');
     }
   }
 
@@ -527,75 +709,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
   void initState() {
     super.initState();
     selectedHouse = widget.houseData;
-    print("houseData: ${widget.houseData}");
-  }
-
-  Widget _buildIntroduce() {
-    return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: const Color(0xFFECD8C9),
-        boxShadow: [
-          BoxShadow(
-            color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundImage: NetworkImage(
-                      'https://img1.591.com.tw/user/2023/05/09/1683641201851.jpg!100x100.jpg'),
-                  radius: 30.0,
-                ),
-                SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${widget.houseData['lessorname']}',
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                    // Text(widget.houseData['lessorType'],
-                    //     style: TextStyle(fontSize: 15)),
-                  ],
-                )
-              ],
-            ),
-            const SizedBox(height: 15),
-            Text(
-              widget.houseData['content'],
-              style: const TextStyle(fontSize: 18),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.center,
-              child: TextButton(
-                style: TextButton.styleFrom(
-                  backgroundColor: const Color(0xFFA58484),
-                ),
-                onPressed: () => _showBottomSheet(context),
-                child: const Text(
-                  '查看更多',
-                  style: TextStyle(color: Color.fromRGBO(247, 247, 246, 1)),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    ("houseData: ${widget.houseData}");
   }
 
   void _showBottomSheet(
@@ -654,7 +768,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                   items: allImages,
                   options: CarouselOptions(
                     autoPlay: true,
-                    autoPlayInterval: Duration(seconds: 4),
+                    autoPlayInterval: const Duration(seconds: 4),
                     enlargeCenterPage: false,
                     aspectRatio: 1.5,
                     viewportFraction: 1,
@@ -673,10 +787,10 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                       return GestureDetector(
                         onTap: () => {},
                         child: Container(
-                          width: 1.0,
-                          height: 12.0,
+                          width: 8,
+                          height: 8,
                           margin: const EdgeInsets.symmetric(
-                              vertical: 8.0, horizontal: 4.0),
+                              vertical: 8, horizontal: 4),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color:
@@ -713,86 +827,11 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                 runSpacing: 12,
                 alignment: WrapAlignment.spaceEvenly,
                 children: [
-                  Container(
-                    alignment: Alignment.center,
-                    width: 110,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F0F0),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      widget.houseData['district'],
-                      style: const TextStyle(
-                          fontSize: 20,
-                          color: Color(0xFF613F26),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Container(
-                    alignment: Alignment.center,
-                    width: 110,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F0F0),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      widget.houseData['pattern'],
-                      style: const TextStyle(
-                          fontSize: 20,
-                          color: Color(0xFF613F26),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Container(
-                    alignment: Alignment.center,
-                    width: 110,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F0F0),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      '${widget.houseData['size']}',
-                      style: const TextStyle(
-                          fontSize: 20,
-                          color: Color(0xFF613F26),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Container(
-                    alignment: Alignment.center,
-                    width: 110,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F0F0),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      '${widget.houseData['layer']}',
-                      style: const TextStyle(
-                          fontSize: 20,
-                          color: Color(0xFF613F26),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Container(
-                    alignment: Alignment.center,
-                    width: 110,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF5F0F0),
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Text(
-                      widget.houseData['type'],
-                      style: const TextStyle(
-                          fontSize: 20,
-                          color: Color(0xFF613F26),
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
+                  _buildInfoChip('地區', widget.houseData['district']),
+                  _buildInfoChip('房屋類型', widget.houseData['houseType']),
+                  _buildInfoChip('坪數', widget.houseData['size']),
+                  _buildInfoChip('樓層', widget.houseData['floor']),
+                  _buildInfoChip('型態', widget.houseData['pattern']),
                 ],
               ),
             ),
@@ -848,14 +887,14 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
               height: 15,
             ),
             Container(
-              padding: EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
-              margin: EdgeInsets.all(15),
+              padding: const EdgeInsets.only(top: 15, bottom: 15, left: 5, right: 5),
+              margin: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: const Color(0xFFECD8C9),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    color: const Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 5),
@@ -865,7 +904,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
               alignment: Alignment.center,
               child: Text(
                 '${widget.houseData['city']}${widget.houseData['district']}${widget.houseData['address']}',
-                style: TextStyle(
+                style: const TextStyle(
                     fontSize: 18,
                     color: Color(0xFF613F26),
                     fontWeight: FontWeight.bold),
@@ -875,14 +914,14 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
               height: 15,
             ),
             Container(
-              padding: EdgeInsets.only(top: 10, bottom: 10, left: 5, right: 5),
-              margin: EdgeInsets.all(15),
+              padding: const EdgeInsets.only(top: 10, bottom: 10, left: 5, right: 5),
+              margin: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: const Color(0xFFECD8C9),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    color: const Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 5),
@@ -896,10 +935,10 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                   children: <Widget>[
                     Text('寵物：${widget.houseData['pet']}',
                         style:
-                            TextStyle(fontSize: 18, color: Color(0xFF613F26))),
+                            const TextStyle(fontSize: 18, color: Color(0xFF613F26))),
                     Text('性別限制：${widget.houseData['genderlimit']}',
                         style:
-                            TextStyle(fontSize: 18, color: Color(0xFF613F26))),
+                            const TextStyle(fontSize: 18, color: Color(0xFF613F26))),
                   ],
                 ),
               ),
@@ -913,7 +952,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                     color: Color(0xFF613F26)),
               ),
             ),
-            SizedBox(height: 5),
+            const SizedBox(height: 5),
             Container(
               margin: const EdgeInsets.only(left: 15, right: 15),
               padding: const EdgeInsets.all(10),
@@ -923,7 +962,7 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                 color: const Color(0xFFECD8C9),
                 boxShadow: [
                   BoxShadow(
-                    color: Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
+                    color: const Color.fromARGB(255, 172, 172, 172).withOpacity(0.5),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: const Offset(0, 5),
@@ -983,15 +1022,96 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
               ),
             ),
             const SizedBox(height: 5),
-            _buildIntroduce(),
-            SizedBox(
+            Card(
+              color: const Color(0xFFECD8C9),
+              margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: [
+                        const CircleAvatar(
+                          backgroundImage: NetworkImage(
+                              'https://img1.591.com.tw/user/2023/05/09/1683641201851.jpg!100x100.jpg'),
+                          radius: 30.0,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(widget.houseData['lessorname'],
+                                style: const TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold)),
+                            // Text(widget.houseData['ownerType'],
+                            //     style: TextStyle(fontSize: 15)),
+                          ],
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () async {
+                            final Uri url = Uri(
+                                scheme: 'tel',
+                                path: widget.houseData['phone']);
+
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url);
+                            } else {
+                              throw '無法撥打 $url';
+                            }
+                          },
+                          icon: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: const Color(0xFF613F26),
+                                width: 2.0,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.phone,
+                              color: Color(0xFF613F26),
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    Text(
+                      widget.houseData['content'],
+                      style: const TextStyle(fontSize: 18),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.center,
+                      child: TextButton(
+                        style: TextButton.styleFrom(
+                          backgroundColor: const Color(0xFFA58484),
+                        ),
+                        onPressed: () => _showBottomSheet(context),
+                        child: const Text(
+                          '查看更多',
+                          style: TextStyle(
+                              color: Color.fromRGBO(247, 247, 246, 1)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(
               height: 10,
             )
           ],
         ),
         bottomNavigationBar: GestureDetector(
           onTap: _onBottomAppBarPressed,
-          child: ClipRRect(
+          child: const ClipRRect(
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(30),
                 topRight: Radius.circular(30),
@@ -1016,5 +1136,24 @@ class _CreateHouseDetailPageState extends State<CreateHouseDetailPage> {
                 ),
               )),
         ));
+  }
+
+  Widget _buildInfoChip(String label, String? value) {
+    return Container(
+      alignment: Alignment.center,
+      width: 110,
+      height: 45,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F0F0),
+        borderRadius: BorderRadius.circular(20.0),
+      ),
+      child: Text(
+        value ?? '未提供',
+        style: const TextStyle(
+            fontSize: 20,
+            color: Color(0xFF613F26),
+            fontWeight: FontWeight.bold),
+      ),
+    );
   }
 }
