@@ -3,19 +3,29 @@ import json
 import torch
 import mysql.connector
 from transformers import BertTokenizer, BertModel
-from ckiptagger import WS
+from ckiptagger import WS, NER
 from ultralytics import YOLO
 from PIL import Image
 from collections import Counter
 import numpy as np
 import torch.nn.functional as F
-
+from concurrent.futures import ThreadPoolExecutor
 
 # 初始化 CKIP、BERT、YOLO
 ws = WS("C:\\Users\\user\\OneDrive\\桌面\\data")  # CKIP WS 模型路徑
+ner = NER("C:\\Users\\user\\OneDrive\\桌面\\data")
 tokenizer_zh = BertTokenizer.from_pretrained('bert-base-chinese')
 bert_model_zh = BertModel.from_pretrained('bert-base-chinese')
 yolo_model = YOLO("yolov8n.pt")
+
+# 自定義後綴與排除條件
+custom_suffixes = [
+    "公園", "學校", "醫院", "機構", "市", "店", "超市", "站", "中心", "街",
+    "市場", "公司", "高中", "小學", "幼兒園", "大學", "學院", "診所", "館",
+    "局", "廣場", "院", "場所", "廟", "堂"
+]
+
+exclusions = ["不動產", "加盟店", "直營店", "元大花廣圓頂世紀館", "住都中心", "台北聯勝租賃部"]
 
 # MySQL 資料庫連接（BERT 向量儲存）
 def connect_to_existing_database():
@@ -49,7 +59,8 @@ def detect_objects(image_path):
     results = yolo_model(image_path)
     image = Image.open(image_path)
     labels = [yolo_model.names[int(cls)] for cls in results[0].boxes.cls.tolist()]  # YOLO 偵測到的物件名稱
-    return labels, image
+    positions = results[0].boxes.xyxy.cpu().numpy().tolist()  # 提取 YOLO 偵測到的位置
+    return labels, positions, image
 
 # 提取主色
 def get_dominant_color(image):
@@ -59,7 +70,7 @@ def get_dominant_color(image):
     dominant_color = counter.most_common(1)[0][0]
     return dominant_color
 
-# 計算餘弦相似度
+# 計算餘幣相似度
 def cosine_similarity(v1, v2):
     v1 = torch.tensor(v1, dtype=torch.float32)
     v2 = torch.tensor(v2, dtype=torch.float32)
@@ -101,9 +112,22 @@ def process_text_data(hid, item):
     available_devices = [device_item['device'] for device_item in item['servicelist'] if device_item.get('avaliable', False)]
     VW_servicelist = get_bert_embedding(' '.join(available_devices), tokenizer_zh, bert_model_zh)
 
+    # 使用 NER 提取位置實體
+    content = item['remark'].get('content', '')
+    sentences = ws([content])
+    ner_results = ner(sentences)
+    location_entities = []
+    for sentence, ners in zip(sentences, ner_results):
+        for name, (ner_tag, _) in zip(sentence, ners):
+            if ner_tag == 'LOC' and not any(excl in name for excl in exclusions):
+                location_entities.append(name)
+    # 預處理 NER 結果
+    processed_locations = preprocess_names(location_entities)
+    VW_NER = get_bert_embedding(' '.join(processed_locations), tokenizer_zh, bert_model_zh)
+
     # 儲存到資料庫
-    cursor.execute("INSERT INTO text_features (hid, VW_address, VW_pattern, VW_size, VW_type, VW_subway, VW_bus, VW_servicelist) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                   (hid, json.dumps(VW_address), json.dumps(VW_pattern), json.dumps(VW_size), json.dumps(VW_type), json.dumps(VW_subway), json.dumps(VW_bus), json.dumps(VW_servicelist)))
+    cursor.execute("INSERT INTO text_features (hid, VW_address, VW_pattern, VW_size, VW_type, VW_subway, VW_bus, VW_servicelist, location_entities, VW_NER) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                   (hid, json.dumps(VW_address), json.dumps(VW_pattern), json.dumps(VW_size), json.dumps(VW_type), json.dumps(VW_subway), json.dumps(VW_bus), json.dumps(VW_servicelist), json.dumps(processed_locations), json.dumps(VW_NER)))
     connection.commit()
     cursor.close()
     connection.close()
@@ -174,17 +198,39 @@ def process_image_data(hid, image_folder):
     
     for img in images:
         image_path = os.path.join(image_folder_path, img)
-        labels, image = detect_objects(image_path)
+        labels, positions, image = detect_objects(image_path)
         dominant_color = get_dominant_color(image)
         
         # YOLO + BERT 嵌入
-        for label in labels:
+        for label, position in zip(labels, positions):
             bert_features = get_bert_embedding(label, tokenizer_zh, bert_model_zh)
-            cursor.execute("INSERT INTO image_features (hid, image_name, label, dominant_color, bert_features) VALUES (%s, %s, %s, %s, %s)",
-                           (hid, img, label, str(dominant_color), json.dumps(bert_features)))
+            cursor.execute("INSERT INTO image_features (hid, image_name, label, dominant_color, bert_features, position) VALUES (%s, %s, %s, %s, %s, %s)",
+                           (hid, img, label, str(dominant_color), json.dumps(bert_features), json.dumps(position)))
     connection.commit()
     cursor.close()
     connection.close()
+
+# 比較圖片位置
+def compare_image_positions(pos1, pos2):
+    # 計算位置相似度，當相似度大於 0.4 時認為是相同位置
+    pos1 = np.array(pos1)
+    pos2 = np.array(pos2)
+    iou = calculate_iou(pos1, pos2)
+    return iou > 0.4
+
+# 計算 IOU（Intersection over Union）
+def calculate_iou(box1, box2):
+    xA = max(box1[0], box2[0])
+    yA = max(box1[1], box2[1])
+    xB = min(box1[2], box2[2])
+    yB = min(box1[3], box2[3])
+
+    interArea = max(0, xB - xA) * max(0, yB - yA)
+    box1Area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    box2Area = (box2[2] - box2[0]) * (box2[3] - box2[1])
+
+    iou = interArea / float(box1Area + box2Area - interArea)
+    return iou
 
 def main():
     # 圖片儲存路徑
@@ -195,7 +241,7 @@ def main():
     cursor = connection.cursor(dictionary=True)  # 使用 DictCursor 以便處理結果為字典格式
     
     # 查詢資料庫中所有待處理的房屋文字資料
-    cursor.execute("SELECT * FROM house_details WHERE processed = 0")  # 假設資料庫中有個 processed 欄位標記是否處理
+    cursor.execute("SELECT * FROM house_details WHERE processed = 0")  # 假設資料庫中有個 processed 欄位標誌是否處理
     house_data = cursor.fetchall()  # 取得所有未處理的房屋資料
     
     # 處理文字資料
@@ -205,9 +251,12 @@ def main():
         # 處理並儲存房屋文字資料
         process_text_data(hid, item)
         
-        # 更新已處理標記
+        # 更新已處理標誌
         cursor.execute("UPDATE house_details SET processed = 1 WHERE hid = %s", (hid,))
         connection.commit()
+
+        # 處理圖片資料
+        process_image_data(hid, image_folder)
 
     cursor.close()
     connection.close()
