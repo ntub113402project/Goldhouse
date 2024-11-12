@@ -31,8 +31,8 @@ tunnels = ngrok.get_tunnels()
 for tunnel in tunnels:
     ngrok.disconnect(tunnel.public_url)
 
-# 連接新隧道
-public_url = ngrok.connect(5000).public_url
+# 連接新的 ngrok 隧道到 port 8080
+public_url = ngrok.connect(8080).public_url
 callback_url = f"{public_url}/callback"
 print("Callback URL:", callback_url)
 
@@ -325,4 +325,4 @@ def handle_message(event):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=8080)
